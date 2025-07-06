@@ -262,8 +262,6 @@ const fetchData = async (slug) => {
     );
     if (filteredProducts.length > 0) {
       dataChil.value = filteredProducts;
-      console.log("dataChil: ", dataChil.value);
-
       haveData.value = true;
     } else {
       dataChil.value = [];
