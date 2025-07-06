@@ -25,6 +25,8 @@ let userMarker = null;
 let markers = [];
 let currentRoute = null;
 
+const apiKey = import.meta.env.VITE_MAP_API_KEY;
+
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -41,7 +43,7 @@ const loadMap = async () => {
   await nextTick();
 
   platform = new H.service.Platform({
-    apikey: import.meta.env.VITE_MAP_API_KEY,
+    apikey: apiKey,
   });
 
   const defaultLayers = platform.createDefaultLayers();
@@ -123,9 +125,7 @@ const initUserMarker = (lat, lon) => {
 const searchPharmacies = async (lat, lon) => {
   if (!map) return;
 
-  const url = `https://discover.search.hereapi.com/v1/discover?at=${lat},${lon}&q=pharmacy&limit=10&apikey=${
-    import.meta.env.VITE_MAP_API_KEY
-  }`;
+  const url = `https://discover.search.hereapi.com/v1/discover?at=${lat},${lon}&q=pharmacy&limit=10&apikey=${apiKey}`;
 
   try {
     const response = await fetch(url);
@@ -203,9 +203,7 @@ const drawRoute = async (startLat, startLng, endLat, endLng) => {
     currentRoute = null;
   }
 
-  const routeUrl = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${startLat},${startLng}&destination=${endLat},${endLng}&return=polyline&apikey=${
-    import.meta.env.VITE_MAP_API_KEY
-  }`;
+  const routeUrl = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${startLat},${startLng}&destination=${endLat},${endLng}&return=polyline&apikey=${apiKey}`;
 
   try {
     const response = await fetch(routeUrl);

@@ -31,13 +31,13 @@
       </a-flex>
       <a-flex
         horizontal
-        class="max-w-[100%] overflow-hidden justify-center gap-[30px]"
+        class="max-w-[100%] gap-[30px]"
         v-if="dataChil.length > 0"
       >
         <a-flex
           v-for="itemChil in displayedItems"
           :key="itemChil.id"
-          class="max-w-[100%] min-w-[100px]"
+          class="max-w-[100%] min-w-[100px] flex-1"
         >
           <a-flex vertical class="bg-[#F3F4F6] rounded-lg pb-[20px] w-full">
             <a-flex vertical align="center" class="flex-1">
@@ -45,7 +45,7 @@
                 <img
                   class="w-[100%] px-[10px] bg-white h-[300px] max-w-[100%]"
                   :src="
-                    itemChil.image?.path ||
+                    itemChil.image?.cloudinary_url ||
                     'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
                   "
                 />

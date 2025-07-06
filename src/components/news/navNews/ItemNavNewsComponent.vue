@@ -55,7 +55,7 @@
               <a :href="`detailNews/${item.slug}`" class="hover:bg-white p-0">
                 <img
                   :src="
-                    item.featured_images?.path ||
+                    item.featured_images?.cloudinary_url ||
                     'https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty-300x240.jpg'
                   "
                   class="h-[190px]"
