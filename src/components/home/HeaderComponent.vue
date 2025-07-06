@@ -228,23 +228,13 @@ const getUserSession = () => {
   return false;
 };
 
-const checkUserSession = async () => {
-  if (getUserSession()) {
-    await getUser();
+const checkUserSession = () => {
+  if (getUserSession() == true) {
+    getUser();
+  } else {
+    return;
   }
 };
-
-onMounted(() => {
-  checkUserSession();
-});
-
-watch(
-  () => route.fullPath,
-  () => {
-    checkUserSession();
-  }
-);
-
 const showLogoutConfirm = () => {
   Modal.confirm({
     title: "Chắc chắn đăng xuất?",
