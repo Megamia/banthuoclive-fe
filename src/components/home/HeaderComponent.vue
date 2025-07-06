@@ -228,13 +228,12 @@ const getUserSession = () => {
   return false;
 };
 
-const checkUserSession = () => {
-  if (getUserSession() == true) {
-    getUser();
-  } else {
-    return;
+const checkUserSession = async () => {
+  if (getUserSession()) {
+    await getUser();
   }
 };
+
 const showLogoutConfirm = () => {
   Modal.confirm({
     title: "Chắc chắn đăng xuất?",
