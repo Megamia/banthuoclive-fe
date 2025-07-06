@@ -7,7 +7,7 @@
     <a-flex class="max-w-[100%]">
       <a-tabs
         v-model:data="activeKey"
-        class="nav max-w-[100%] "
+        class="nav max-w-[100%]"
         @change="changeData"
       >
         <a-tab-pane
@@ -262,6 +262,8 @@ const fetchData = async (slug) => {
     );
     if (filteredProducts.length > 0) {
       dataChil.value = filteredProducts;
+      console.log("dataChil: ", dataChil.value);
+
       haveData.value = true;
     } else {
       dataChil.value = [];
