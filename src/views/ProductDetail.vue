@@ -54,15 +54,15 @@
                 <a-image
                   v-for="item in product.gallery"
                   :key="item.id"
-                  :src="item.path"
+                  :src="item.cloudinary_url"
                   :width="120"
-                  @click="setActiveImage(item.path)"
+                  @click="setActiveImage(item.cloudinary_url)"
                   alt="Product Image"
                   :class="{
                     'gallery-image ring-2 ring-[#2268DE] scale-100 rounded-sm my-2':
-                      item.path === activeImage,
+                      item.cloudinary_url === activeImage,
                     'gallery-image rounded-sm border my-2':
-                      item.path !== activeImage,
+                      item.cloudinary_url !== activeImage,
                   }"
                 />
               </div>
@@ -239,7 +239,7 @@ const fetchData = async () => {
     );
 
     if (product.value?.gallery?.length > 0) {
-      activeImage.value = product.value.gallery[0].path;
+      activeImage.value = product.value.gallery[0].cloudinary_url;
     }
   } catch (error) {
     console.error("Error fetching product:", error);
@@ -258,8 +258,8 @@ watch(
   }
 );
 
-const setActiveImage = (path) => {
-  activeImage.value = path;
+const setActiveImage = (cloudinary_url) => {
+  activeImage.value = cloudinary_url;
 };
 
 const handleAddToCart = async (data) => {

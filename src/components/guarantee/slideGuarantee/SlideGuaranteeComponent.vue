@@ -43,13 +43,11 @@
             1200: { slidesPerView: 4 },
           }"
         >
-          <swiper-slide
-            v-for="itemChil in dataSlide"
-            :key="itemChil.id"
-          >
-            <a-flex vertical align="center" 
-            class="rounded-[26px] border border-[#2268DE] border-t-[8px] bg-white shadow-md shadow-black/20 p-5 flex flex-col items-center justify-center"
-            
+          <swiper-slide v-for="itemChil in dataSlide" :key="itemChil.id">
+            <a-flex
+              vertical
+              align="center"
+              class="rounded-[26px] border border-[#2268DE] border-t-[8px] bg-white shadow-md shadow-black/20 p-5 flex flex-col items-center justify-center"
             >
               <div class="relative py-[20px] justify-center flex">
                 <img
@@ -139,6 +137,8 @@ const fetchDataSldie = async (slug) => {
     );
     if (response.data) {
       dataSlide.value = response.data.products;
+      console.log("dataSlide.value: ", dataSlide.value);
+
       haveData.value = true;
     } else {
       dataSlide.value = [];
