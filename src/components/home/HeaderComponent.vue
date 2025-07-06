@@ -234,6 +234,17 @@ const checkUserSession = async () => {
   }
 };
 
+onMounted(() => {
+  checkUserSession();
+});
+
+watch(
+  () => route.fullPath,
+  () => {
+    checkUserSession();
+  }
+);
+
 const showLogoutConfirm = () => {
   Modal.confirm({
     title: "Chắc chắn đăng xuất?",
