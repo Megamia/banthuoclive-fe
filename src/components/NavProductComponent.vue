@@ -53,8 +53,8 @@
               <div class="w-full relative py-[20px] justify-center flex">
                 <img
                   :src="
-                    itemChil?.image?.path ||
                     itemChil?.image?.cloudinary_url ||
+                    itemChil?.image?.path ||
                     'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
                   "
                   class="justify-center items-center w-[100%] px-[10px] bg-white h-[300px] max-w-[300px] max-h-full object-cover"
@@ -268,7 +268,6 @@ const fetchData = async (slug) => {
       dataChil.value = [];
       haveData.value = false;
     }
-    console.log("dataChil: ", dataChil);
   } catch (e) {
     console.log("Error: ", e);
   }

@@ -54,15 +54,15 @@
                 <a-image
                   v-for="item in product.gallery"
                   :key="item.id"
-                  :src="item.path || item.cloudinary_url"
+                  :src="item.cloudinary_url || item.path"
                   :width="120"
-                  @click="setActiveImage(item.path || item.cloudinary_url)"
+                  @click="setActiveImage(item.cloudinary_url || item.path)"
                   alt="Product Image"
                   :class="{
                     'gallery-image ring-2 ring-[#2268DE] scale-100 rounded-sm my-2':
-                      item.path || item.cloudinary_url === activeImage,
+                      item.cloudinary_url || item.path === activeImage,
                     'gallery-image rounded-sm border my-2':
-                      item.path || item.cloudinary_url !== activeImage,
+                      item.cloudinary_url || item.path !== activeImage,
                   }"
                 />
               </div>
@@ -224,7 +224,6 @@ const fetchData = async () => {
 
     const allProductData = await getDataFromIndexedDB("products");
     const detailProduct = allProductData.filter((item) => item.slug === slug);
-    console.log("allProductData: ", allProductData);
 
     if (detailProduct.length === 0) {
       alert("Không tìm thấy sản phẩm!");
@@ -239,8 +238,8 @@ const fetchData = async () => {
 
     if (product.value?.gallery?.length > 0) {
       activeImage.value =
-        product.value.gallery[0].path ||
-        product.value.gallery[0].cloudinary_url;
+        product.value.gallery[0].cloudinary_url ||
+        product.value.gallery[0].path;
     }
   } catch (error) {
     console.error("Error fetching product:", error);

@@ -45,8 +45,8 @@
                 <img
                   class="w-[100%] px-[10px] bg-white h-[300px] max-w-[100%]"
                   :src="
-                    itemChil.image?.path ||
                     itemChil.image?.cloudinary_url ||
+                    itemChil.image?.path ||
                     'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
                   "
                 />
