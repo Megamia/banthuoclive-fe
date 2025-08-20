@@ -267,6 +267,7 @@ const fetchData = async (slug) => {
       dataChil.value = [];
       haveData.value = false;
     }
+    console.log("dataChil: ", dataChil);
   } catch (e) {
     console.log("Error: ", e);
   }
