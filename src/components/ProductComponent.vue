@@ -182,7 +182,6 @@ const fillterData = (id) => {
   dataChil.value = productData.value.filter(
     (product) => Number(product.category_id) === Number(id)
   );
-  console.log("dataChil: ", dataChil.value);
 };
 
 const changeData = (id) => {
