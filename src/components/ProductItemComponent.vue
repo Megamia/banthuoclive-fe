@@ -4,7 +4,7 @@
       <div class="w-full relative pt-[20px] justify-center flex">
         <img
           :src="
-            product.image?.cloudinary_url ||
+            product.image?.path ||
             'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
           "
           alt="Product Image"
