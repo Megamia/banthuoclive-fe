@@ -81,9 +81,7 @@
               <AnFilledSetting
                 class="w-[60px] h-[60px] text-[#2268DE] cursor-default"
               />
-              <span class="font-medium text-sm"
-                >Miễn phí hỗ trợ toàn quốc</span
-              >
+              <span class="font-medium text-sm">Miễn phí hỗ trợ toàn quốc</span>
             </div>
           </div>
         </div>
@@ -226,6 +224,7 @@ const fetchData = async () => {
 
     const allProductData = await getDataFromIndexedDB("products");
     const detailProduct = allProductData.filter((item) => item.slug === slug);
+    console.log("allProductData: ", allProductData);
 
     if (detailProduct.length === 0) {
       alert("Không tìm thấy sản phẩm!");
