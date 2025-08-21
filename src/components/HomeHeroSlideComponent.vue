@@ -23,11 +23,6 @@
     </swiper-slide>
     <swiper-slide>
       <img
-        src="https://soyt.vinhphuc.gov.vn/noidung/PublishingImages/T2.2023/thuoc-chua-benh_2023169824.jpg"
-      />
-    </swiper-slide>
-    <swiper-slide>
-      <img
         src="https://www.vinmec.com/static/uploads/20211106_132340_139604_vitamin_tot_cho_phu_max_1800x1800_jpg_6d6667a55e.jpg"
       />
     </swiper-slide>
