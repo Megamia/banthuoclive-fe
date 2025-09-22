@@ -286,7 +286,12 @@ const login = async () => {
   try {
     axios.defaults.withCredentials = true;
 
-    await axios.get(`${import.meta.env.VITE_APP_URL_API}/sanctum/csrf-cookie`);
+    await axios.get(
+      `${import.meta.env.VITE_APP_URL_BACKEND}/sanctum/csrf-cookie`,
+      {
+        withCredentials: true,
+      }
+    );
 
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API}/login`,
