@@ -108,7 +108,6 @@
                     id="email"
                     class="bg-indigo-50 border border-indigo-300 text-indigo-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
                     v-model="profile.email"
-                    disabled
                   />
                 </div>
                 <div class="mb-2 sm:mb-6">
@@ -123,8 +122,12 @@
                     class="bg-indigo-50 border border-indigo-300 text-indigo-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
                     v-model="profile.phone"
                     placeholder="Nhập số điện thoại"
+                    @input="validatePhone"
                     :disabled="!editMode"
                   />
+                  <p v-if="phoneError" class="text-red-500 text-sm mt-1">
+                    {{ phoneError }}
+                  </p>
                 </div>
 
                 <div class="mb-2 sm:mb-6">
@@ -281,6 +284,7 @@
                     />
                     <button
                       type="button"
+                      tabindex="-1"
                       @click="passwordVisibility.old = !passwordVisibility.old"
                       class="absolute inset-y-0 right-2 flex items-center text-indigo-600"
                     >
@@ -305,11 +309,12 @@
                       class="bg-indigo-50 border border-indigo-300 text-indigo-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
                       v-model="passwordForm.new_password"
                       placeholder="Nhập mật khẩu mới..."
-                      required
                       autocomplete="new-password"
+                      required
                     />
                     <button
                       type="button"
+                      tabindex="-1"
                       @click="passwordVisibility.new = !passwordVisibility.new"
                       class="absolute inset-y-0 right-2 flex items-center text-indigo-600"
                     >
@@ -334,11 +339,12 @@
                       class="bg-indigo-50 border border-indigo-300 text-indigo-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
                       v-model="passwordForm.confirm_password"
                       placeholder="Nhập lại mật khẩu mới..."
-                      required
                       autocomplete="new-password"
+                      required
                     />
                     <button
                       type="button"
+                      tabindex="-1"
                       @click="
                         passwordVisibility.confirm = !passwordVisibility.confirm
                       "
@@ -426,16 +432,15 @@
                   >Địa chỉ:
                   {{
                     dataInfor
-                      ? dataInfor.address +
-                        ", " +
-                        dataInfor.ward +
-                        ", " +
-                        dataInfor.district +
-                        ", " +
-                        dataInfor.province
+                      ? [
+                          dataInfor.address || "Lỗi dữ liệu",
+                          dataInfor.ward || "Lỗi dữ liệu",
+                          dataInfor.district || "Lỗi dữ liệu",
+                          dataInfor.province || "Lỗi dữ liệu",
+                        ].join(", ")
                       : "Đang tải..."
-                  }}</span
-                >
+                  }}
+                </span>
                 <span
                   >Loại thanh toán:
                   {{
@@ -519,13 +524,15 @@
                     Địa chỉ:
                     {{
                       dataOrderItem
-                        ? dataOrderItem.property.address +
-                          ", " +
-                          dataOrderItem.wardName +
-                          ", " +
-                          dataOrderItem.districtName +
-                          ", " +
-                          dataOrderItem.provinceName
+                        ? [
+                            dataOrderItem.property.address || "Lỗi dữ liệu",
+
+                            dataOrderItem.wardName || "Lỗi dữ liệu",
+
+                            dataOrderItem.districtName || "Lỗi dữ liệu",
+
+                            dataOrderItem.provinceName || "Lỗi dữ liệu",
+                          ].join(", ")
                         : "Đang tải..."
                     }}
                   </span>
@@ -591,6 +598,18 @@ const dataOrder = ref([]);
 const isFind = ref(false);
 const isReceived = ref([]);
 const selectedOrderIndex = ref(null);
+let isUpdatingProvince = false;
+let isUpdatingDistrict = false;
+
+const phoneError = ref("");
+
+const validatePhone = (e) => {
+  const value = e.target.value;
+  const regex = /^(0[3|5|7|8|9])[0-9]{8}$/;
+  phoneError.value = regex.test(value)
+    ? ""
+    : "Số điện thoại phải bắt đầu bằng 03, 05, 07, 08, 09 và có 10 số.";
+};
 
 const toggleDetail = (index, code) => {
   if (selectedOrderIndex.value === index) {
@@ -603,7 +622,10 @@ const toggleDetail = (index, code) => {
 };
 const handleFindOrder = () => {
   if (!formState.GHN_Code.trim()) {
-    alert("Vui lòng nhập mã đơn hàng!");
+    Modal.error({
+      title: "Tìm kiếm thông tin đơn hàng thất bại.",
+      content: "Vui lòng nhập mã đơn hàng!",
+    });
     return;
   }
 
@@ -644,20 +666,6 @@ const handleReceived = async (index, order_code, id) => {
       });
     },
   });
-  // if (confirm("Hành động này sẽ không thể hoàn tác")) {
-  //   alert("Xác nhận thành công");
-  //   try {
-  //     const response = await axios.post(
-  //       `${import.meta.env.VITE_APP_URL_API_ORDER}/updateStatus/${order_code}`
-  //     );
-  //     isReceived.value[index] = true;
-  //     dataOrder.value[index].status_id = 2;
-  //   } catch (e) {
-  //     console.log("Error: ", e);
-  //   }
-  // } else {
-  //   alert("Xác nhận thất bại");
-  // }
 };
 
 const find = async (code) => {
@@ -674,22 +682,12 @@ const find = async (code) => {
     if (response.status === 200) {
       dataGHN.value = response.data.data;
 
-      //Lấy địa chỉ theo GHN
-      // if (dataGHN.value.to_district_id) {
-      //   await getAddressInforGHN(
-      //     dataGHN.value.to_district_id,
-      //     dataGHN.value.to_ward_code
-      //   );
-      // } else {
-      //   alert("Không có thông tin về quận/huyện.");
-      // }
-      //Lấy địa chỉ theo GHN
-
-      //Lấy dữ liệu theo order_code
       await getDataOrder(dataGHN.value.client_order_code);
-      //Lấy dữ liệu theo order_code
     } else {
-      alert(`Không tìm thấy thông tin của đơn hàng với mã ${GHN_Code.value}`);
+      Modal.error({
+        title: "Tìm kiếm thông tin đơn hàng thất bại",
+        content: `Không tìm thấy thông tin của đơn hàng của bạn với mã ${GHN_Code.value}`,
+      });
       return;
     }
   } catch (e) {
@@ -739,15 +737,29 @@ const getDataOrder = async (order_code) => {
     );
 
     if (response.status === 200) {
-      return (dataInfor.value = {
-        name: response.data.property.name,
-        phone: response.data.property.phone,
-        address: response.data.property.address,
-        ward: response.data.property.subdistrict,
-        district: response.data.property.district,
-        province: response.data.property.province,
+      const data = response.data.property;
+
+      const provinceName = await fetchProvinceNameById(data.province);
+
+      const districtsData = await getDistrictsByProvinceId(data.province);
+      const district = districtsData.find(
+        (d) => String(d.DistrictID) === String(data.district)
+      );
+
+      const wardsData = await getWardsByDistrictId(data.district);
+      const ward = wardsData.find(
+        (w) => String(w.WardCode) === String(data.subdistrict)
+      );
+
+      dataInfor.value = {
+        name: data.name,
+        phone: data.phone,
+        address: data.address,
+        province: provinceName || "Lỗi dữ liệu",
+        district: district ? district.DistrictName : "Lỗi dữ liệu",
+        ward: ward ? ward.WardName : "Lỗi dữ liệu",
         shipping_status: response.data.status_id,
-      });
+      };
     }
   } catch (e) {
     console.log("Error: ", e);
@@ -771,14 +783,20 @@ const getAllDataOrder = async (id) => {
         order.provinceName = await fetchProvinceNameById(
           order.property.province
         );
-        order.districtName = await fetchDistrictNameById(
-          order.property.province,
-          order.property.district
+
+        const districtsData = await getDistrictsByProvinceId(
+          order.property.province
         );
-        order.wardName = await fetchWardNameById(
-          order.property.district,
-          order.property.subdistrict
+        const district = districtsData.find(
+          (d) => d.DistrictID == order.property.district
         );
+        order.districtName = district ? district.DistrictName : "";
+
+        const wardsData = await getWardsByDistrictId(order.property.district);
+        const ward = wardsData.find(
+          (w) => String(w.WardCode) === String(order.property.subdistrict)
+        );
+        order.wardName = ward ? ward.WardName : "";
       });
 
       await Promise.all(promises);
@@ -793,20 +811,26 @@ const fetchProvinceNameById = (id) => {
   return province ? province.ProvinceName : "";
 };
 
-const fetchDistrictNameById = async (provinceId, districtId) => {
-  if (!districtId) return "";
-  await onProvinceChange(provinceId);
-
-  const district = districts.value.find((d) => d.DistrictID == districtId);
-  return district ? district.DistrictName : "";
+const getDistrictsByProvinceId = async (provinceId) => {
+  if (!provinceId) return [];
+  try {
+    const response = await axios.get(`${host}/ghn/districts/${provinceId}`);
+    return response.data.data || [];
+  } catch (e) {
+    console.error("Failed to fetch districts:", e);
+    return [];
+  }
 };
 
-const fetchWardNameById = async (districtId, wardCode) => {
-  if (!wardCode) return "";
-  await onDistrictChange(districtId);
-
-  const ward = wards.value.find((w) => String(w.WardCode) === String(wardCode));
-  return ward ? ward.WardName : "";
+const getWardsByDistrictId = async (districtId) => {
+  if (!districtId) return [];
+  try {
+    const response = await axios.get(`${host}/ghn/wards/${districtId}`);
+    return response.data.data || [];
+  } catch (e) {
+    console.error("Failed to fetch wards:", e);
+    return [];
+  }
 };
 
 const profile = ref({
@@ -847,20 +871,7 @@ const host = import.meta.env.VITE_APP_URL_API_GHN;
 
 const fetchProvinces = async () => {
   try {
-    const token = localStorage.getItem("vuex");
-    console.log("token: ",token);
-    
-    if (!token) {
-      console.warn("Token not found");
-      return;
-    }
-
-    const response = await axios.get(`${host}/ghn/provinces`, {
-      headers: {
-        Token: token,
-      },
-    });
-
+    const response = await axios.get(`${host}/ghn/provinces`);
     provinces.value = response.data.data || [];
   } catch (error) {
     console.error("Failed to fetch GHN provinces:", error);
@@ -868,86 +879,72 @@ const fetchProvinces = async () => {
 };
 
 const onProvinceChange = async (provinceCode) => {
+  if (!provinceCode || isUpdatingProvince) return;
+  isUpdatingProvince = true;
   try {
-    const token = localStorage.getItem("vuex");
-    if (!token) {
-      console.warn("Token not found");
-      return;
-    }
-    if (provinceCode) {
-      const response = await axios.get(
-        `${host}/ghn/districts/${provinceCode}`,
-        {
-          headers: {
-            Token: token,
-          },
-        }
-      );
-      districts.value = response.data.data || [];
+    const response = await axios.get(`${host}/ghn/districts/${provinceCode}`);
+    districts.value = response.data.data || [];
 
-      const currentDistrictExists = districts.value.some(
-        (district) => district.ProvinceID === provinceCode
-      );
+    const currentDistrictExists = districts.value.some(
+      (district) => district.ProvinceID === provinceCode
+    );
 
-      if (!currentDistrictExists) {
-        profile.value.district = null;
-        wards.value = [];
-        profile.value.subdistrict = null;
-      } else {
-        await onDistrictChange(profile.value.district);
-      }
+    if (!currentDistrictExists) {
+      profile.value.district = null;
+      wards.value = [];
+      profile.value.subdistrict = null;
+    } else if (profile.value.district) {
+      await onDistrictChange(profile.value.district);
     }
   } catch (error) {
     console.error("Failed to fetch districts:", error);
+  } finally {
+    isUpdatingProvince = false;
   }
 };
 
 const onDistrictChange = async (districtCode) => {
+  if (!districtCode || isUpdatingDistrict) return;
+
+  isUpdatingDistrict = true;
   try {
-    const token = localStorage.getItem("vuex");
-    if (!token) {
-      console.warn("Token not found");
-      return;
-    }
+    const response = await axios.get(`${host}/ghn/wards/${districtCode}`);
 
-    if (districtCode) {
-      const response = await axios.get(`${host}/ghn/wards/${districtCode}`, {
-        headers: {
-          Token: token,
-        },
-      });
+    wards.value = response.data.data || [];
+    const currentWardExists = wards.value.some(
+      (ward) => ward.DistrictID === districtCode
+    );
 
-      wards.value = response.data.data || [];
-      const currentWardExists = wards.value.some(
-        (ward) => ward.DistrictID === districtCode
-      );
-
-      if (!currentWardExists) {
-        profile.value.subdistrict = null;
-      }
+    if (!currentWardExists) {
+      profile.value.subdistrict = null;
     }
   } catch (error) {
     console.error("Failed to fetch wards:", error);
+  } finally {
+    isUpdatingDistrict = false;
   }
 };
 
-const fetchProfile = async () => {
-  const storedUser = sessionStorage.getItem("user");
-  if (storedUser) {
-    const user = JSON.parse(storedUser);
-    profile.value.first_name = user.first_name;
-    profile.value.last_name = user.last_name;
-    profile.value.email = user.email;
-    profile.value.phone = user.additional_user?.phone || null;
-    profile.value.province = user.additional_user?.province || null;
-    profile.value.district = user.additional_user?.district || null;
-    profile.value.subdistrict = user.additional_user?.subdistrict
-      ? user.additional_user.subdistrict.toString()
-      : null;
-    await onProvinceChange(profile.value.province);
-    profile.value.address = user.additional_user?.address || "";
-    getAllDataOrder(user.id);
+const fetchProfile = async (storedUser) => {
+  if (!storedUser) return;
+  const user = JSON.parse(storedUser);
+  profile.value.first_name = user.first_name;
+  profile.value.last_name = user.last_name;
+  profile.value.email = user.email;
+  profile.value.phone = user.additional_user?.phone || null;
+  if (user.additional_user?.province) {
+    await onProvinceChange(user.additional_user.province);
+    profile.value.province = user.additional_user.province;
   }
+  profile.value.district = user.additional_user?.district || null;
+  profile.value.subdistrict = user.additional_user?.subdistrict
+    ? user.additional_user.subdistrict.toString()
+    : null;
+  if (profile.value.province) {
+    await onProvinceChange(profile.value.province);
+  }
+  profile.value.address = user.additional_user?.address || "";
+  getAllDataOrder(user.id);
 };
 
 const handleChangeInfo = async () => {
@@ -957,19 +954,26 @@ const handleChangeInfo = async () => {
       profile.value,
       { withCredentials: true }
     );
+
     if (response.data) {
-      alert("Cập nhật thông tin tài khoản thành công");
+      Modal.success({
+        title: "Cập nhật thông tin tài khoản thành công!",
+      });
       handleEditInfo();
       sessionStorage.clear("user");
       sessionStorage.setItem("user", JSON.stringify(response.data));
     } else if (response.status == 205) {
-      alert("Chưa đăng nhập");
+      Modal.error({
+        title: "Vui lòng đăng nhập để sử dụng dịch vụ!",
+      });
       sessionStorage.clear("user");
       router.push("/login");
     }
   } catch (error) {
     if (error.response && error.response.status === 401) {
-      alert("Bạn chưa đăng nhập. Đang chuyển hướng...");
+      Modal.error({
+        title: "Bạn chưa đăng nhập. Đang chuyển hướng...!",
+      });
       router.push("/login");
     } else {
       console.log(error);
@@ -980,7 +984,20 @@ const handleChangeInfo = async () => {
 const handleChangePassword = async () => {
   errorMessage.value = "";
   successMessage.value = "";
-  if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
+  const newPassword = passwordForm.value.new_password;
+  const confirmPassword = passwordForm.value.confirm_password;
+
+  if (!/[A-Z]/.test(newPassword)) {
+    errorMessage.value = "Mật khẩu mới phải có ít nhất 1 chữ cái in hoa.";
+    return;
+  }
+
+  if (!/[0-9]/.test(newPassword)) {
+    errorMessage.value = "Mật khẩu mới phải có ít nhất 1 chữ số.";
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
     errorMessage.value = "Mật khẩu mới không khớp.";
     return;
   }
@@ -993,30 +1010,30 @@ const handleChangePassword = async () => {
       },
       { withCredentials: true }
     );
-    if (response.data) {
+    if (response.data.status === 0) {
+      errorMessage.value = response.data.error;
+      return;
+    } else if (response.data.status === 1) {
       successMessage.value = response.data.message;
       passwordForm.value.old_password = "";
       passwordForm.value.new_password = "";
       passwordForm.value.confirm_password = "";
     } else if (response.status == 205) {
-      alert("Chưa đăng nhập");
+      // alert("Chưa đăng nhập");
       sessionStorage.clear("user");
       router.push("/login");
     }
   } catch (error) {
-    if (error.response?.status === 422) {
-      errorMessage.value = error.response.data.error || "Lỗi dữ liệu nhập vào.";
-      console.log(errorMessage);
-    } else {
-      errorMessage.value = "Có lỗi xảy ra! Vui lòng thử lại.";
-      console.log(errorMessage);
-    }
+    errorMessage.value = "Có lỗi xảy ra! Vui lòng thử lại.";
+    console.log(errorMessage);
   }
 };
 
 onMounted(() => {
+  const storedUser = sessionStorage.getItem("user");
+
   fetchProvinces();
-  fetchProfile();
+  fetchProfile(storedUser);
 });
 </script>
 

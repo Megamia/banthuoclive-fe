@@ -38,20 +38,31 @@
       </a-flex>
 
       <div
+        ref="chatContainer"
         v-if="chatHistory.length"
         class="mt-4 p-4 border rounded-lg bg-gray-100 max-h-80 overflow-y-scroll flex flex-col-reverse"
       >
         <ul>
           <li v-for="(chat, index) in chatHistory" :key="index">
-            <p
+            <div
               v-if="chat.answer !== null"
               class="text-purple-600 whitespace-pre-line capitalize"
             >
+              <span class="flex flex-1 justify-end gap-x-1">
+                <p class="font-bold">Bạn:</p>
+                {{ chat.question }}
+              </span>
+
               <strong>Chatbot:</strong> {{ chat.answer }}
-            </p>
-            <p class="text-blue-600 text-end capitalize">
-              <strong>Bạn:</strong> {{ chat.question }}
-            </p>
+              <div v-for="(item, index) in dataProduct" :key="item.id">
+                {{ index + 1 }}.
+                <a :href="item.url" target="_blank">{{ item.name }}</a>
+                <br />💰 Giá: {{ item.price.toLocaleString() }} VNĐ <br />📦
+                Còn: {{ item.stock }} cái
+                <p>===================================</p>
+              </div>
+            </div>
+            <p class="text-blue-600 text-end capitalize"></p>
           </li>
         </ul>
       </div>
@@ -60,14 +71,16 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { nextTick, ref, watch } from "vue";
 import axios from "axios";
 
 const findQuestion = ref("Tìm kiếm ");
 const chatQuestion = ref("");
 const chatHistory = ref([]);
+const chatContainer = ref(null);
 const loadingFind = ref(false);
 const loadingChat = ref(false);
+const dataProduct = ref([]);
 
 const handleEnter = (type, event) => {
   event.preventDefault();
@@ -91,7 +104,7 @@ const askChatbot = async (type) => {
   }
 
   const newChat = { question: userQuestion, answer: "Đang xử lý..." };
-  chatHistory.value.unshift(newChat);
+  chatHistory.value.push(newChat);
 
   if (type === "find") {
     findQuestion.value = "Tìm kiếm ";
@@ -108,8 +121,9 @@ const askChatbot = async (type) => {
     );
 
     setTimeout(() => {
+      dataProduct.value = data.products;
       newChat.answer = data?.reply || "Không nhận được phản hồi từ chatbot.";
-      chatHistory.value = [...chatHistory.value]; 
+      chatHistory.value = [...chatHistory.value];
     }, 1000);
   } catch (error) {
     console.error("Lỗi khi hỏi chatbot:", error);
@@ -119,4 +133,11 @@ const askChatbot = async (type) => {
     else loadingChat.value = false;
   }
 };
+
+watch(chatHistory, async () => {
+  await nextTick(); 
+  if (chatContainer.value) {
+    chatContainer.value.scrollTop = 0; 
+  }
+});
 </script>

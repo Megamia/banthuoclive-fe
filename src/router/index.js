@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
-
+import axios from "axios";
+import { Modal } from "ant-design-vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -65,7 +66,7 @@ const router = createRouter({
       path: "/payment",
       name: "payment",
       component: () => import("../views/PaymentPage.vue"),
-      meta: { layout: "default" },
+      meta: { layout: "default", requiresAuth: true },
     },
     {
       path: "/cart",
@@ -120,12 +121,47 @@ const router = createRouter({
       path: "/profile",
       name: "profile",
       component: () => import("../views/ProfilePage.vue"),
-      meta: { layout: "default" },
+      meta: { layout: "default", requiresAuth: true },
+    },
+    {
+      path: "/appointment",
+      name: "appointment",
+      component: () => import("../views/appointment/AppointmentPage.vue"),
+      meta: { layout: "default", requiresAuth: true },
     },
   ],
   scrollBehavior(to, from, savedPosition) {
     return { top: 0, behavior: "smooth" };
   },
+});
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.requiresAuth) {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (response.status === 200 && response.data) {
+        sessionStorage.setItem("user", JSON.stringify(response.data));
+        next();
+      } else {
+        Modal.error({
+          title: "Xác thực thông tin thất bại.",
+          content: "Vui lòng đăng nhập lại để sử dụng dịch vụ!"
+        });
+        sessionStorage.removeItem("user");
+        next({ name: "login", query: { redirect: to.fullPath } });
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      sessionStorage.removeItem("user");
+      next({ name: "login", query: { redirect: to.fullPath } });
+    }
+  } else {
+    next();
+  }
 });
 
 export default router;

@@ -67,9 +67,11 @@ const hasDataChanged = (localData, apiData) => {
   });
 };
 
-const updateProductListInState = async (apiProducts) => {
-  products.value = apiProducts;
-  await saveDataToIndexedDB("products", apiProducts);
+const updateProductListInState = async (newProducts) => {
+  const map = new Map(products.value.map((p) => [p.id, p]));
+  newProducts.forEach((p) => map.set(p.id, p));
+  products.value = Array.from(map.values());
+  await saveDataToIndexedDB("products", products.value);
 };
 
 const updateDataIfNeeded = async () => {
@@ -118,6 +120,14 @@ onUnmounted(() => {
   clearInterval(dataUpdateInterval);
   echoChannel.stopListening("ProductUpdated");
 });
+// const originalWarn = console.warn;
+
+// console.warn = function (...args) {
+//   if (args[0] && args[0].toString().includes("global_session_not_found")) {
+//     return;
+//   }
+//   originalWarn.apply(console, args);
+// };
 </script>
 
 <template>

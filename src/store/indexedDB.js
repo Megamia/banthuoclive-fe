@@ -43,9 +43,11 @@ export const saveDataToIndexedDB = async (storeName, data) => {
     await store.clear();
 
     for (const item of data) {
-      item.timestamp = timestamp;
-      store.put(item);
+      const plainItem = JSON.parse(JSON.stringify(item)); 
+      plainItem.timestamp = timestamp;
+      store.put(plainItem);
     }
+
 
     await tx.done;
   } catch (error) {

@@ -34,10 +34,8 @@
             <!-- <td>{{ item.img }}</td> -->
             <td>
               <a-flex class="">
-                <img
-                  src="https://livotec.com/wp-content/uploads/2024/11/Bep-tu-don-Livotec-E-smart-LIS-646-1-300x300.png"
-                  class="w-[32px]"
-                />
+                <!-- src="https://livotec.com/wp-content/uploads/2024/11/Bep-tu-don-Livotec-E-smart-LIS-646-1-300x300.png" -->
+                <img :src="item.image.cloudinary_url" class="w-[32px]" />
               </a-flex>
             </td>
             <td>
@@ -126,6 +124,7 @@ import {
   deleteItemFromIndexedDB,
   getDataFromIndexedDB,
 } from "@/store/indexedDB";
+import { Modal } from "ant-design-vue";
 
 const router = useRouter();
 const specs = ref([]);
@@ -184,7 +183,10 @@ const deleteItem = async (itemId) => {
 
 const handlePayment = () => {
   if (changeQuantity.value == false) {
-    alert("Cập nhật giỏ hàng trước khi thanh toán ");
+    Modal.error({
+      title: "Đã xảy ra lỗi!",
+      content: "Cập nhật lại giỏ hàng trước khi thanh toán.",
+    });
     return;
   }
   router.push("/payment");
@@ -195,7 +197,10 @@ const handleUpdateCart = () => {
     dataStoreCart: specs.value,
   });
   changeQuantity.value = true;
-  alert("Cập nhật giỏ hàng thành công!");
+  Modal.success({
+    title: "Cập nhật thành công!",
+    content: "Cập nhật giỏ hàng thành công!",
+  });
   const dataWithNoQuantity = specs.value.filter((item) => item.quantity === 0);
 
   if (dataWithNoQuantity && dataWithNoQuantity.length > 0) {

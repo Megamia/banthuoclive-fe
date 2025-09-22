@@ -252,7 +252,9 @@ const handleLogout = async () => {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API}/logout`,
       {},
-      { withCredentials: true }
+      {
+        withCredentials: true,
+      }
     );
 
     if (response.data) {

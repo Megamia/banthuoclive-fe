@@ -38,7 +38,7 @@ onMounted(async () => {
 
           const data = response.data;
           if (data.status === "success") {
-            console.log("Đã tạo đơn hàng"); 
+            // console.log("Đã tạo đơn hàng"); 
             return data.orderID; 
           } else {
             console.error("Error creating order:", data.message);
@@ -58,7 +58,7 @@ onMounted(async () => {
           );
 
           const result = response.data;
-          console.log("Phản hồi xác nhận thanh toán");
+          // console.log("Phản hồi xác nhận thanh toán");
 
           emit("payment-success", data.orderID);
         } catch (error) {

@@ -60,8 +60,23 @@
                 for="loggingPassword"
                 >Mật khẩu</label
               >
-              <p v-if="!isPasswordValid" class="text-red-500 text-sm mb-2">
-                bao gồm ít nhất 8 ký tự.
+              <p
+                v-if="dataForm.password.length < 8"
+                class="text-red-500 text-sm mb-1"
+              >
+                Ít nhất 8 ký tự
+              </p>
+              <p
+                v-else-if="!/[A-Z]/.test(dataForm.password)"
+                class="text-red-500 text-sm mb-1"
+              >
+                Phải có ít nhất 1 chữ in hoa
+              </p>
+              <p
+                v-else-if="!/\d/.test(dataForm.password)"
+                class="text-red-500 text-sm mb-1"
+              >
+                Phải có ít nhất 1 số
               </p>
             </div>
 
@@ -167,16 +182,11 @@
           </div>
 
           <div class="mt-4">
-            <div class="flex justify-between">
+            <div class="flex">
               <label
                 class="block mb-2 text-sm font-medium text-gray-600 dark:text-gray-200"
                 for="loggingPassword"
                 >Mật khẩu</label
-              >
-              <a
-                href="#"
-                class="text-xs text-gray-500 dark:text-gray-300 hover:underline"
-                >Quên mật khẩu?</a
               >
             </div>
 
@@ -189,6 +199,14 @@
               required=""
               class="block w-full px-4 py-2 text-gray-700 bg-white border rounded-lg dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring focus:ring-blue-300"
             />
+            <div class="flex flex-1 justify-end">
+              <a
+                href="#"
+                tabindex="-1"
+                class="text-xs text-gray-500 dark:text-gray-300 hover:underline"
+                >Quên mật khẩu?</a
+              >
+            </div>
           </div>
 
           <div class="mt-6">
@@ -234,7 +252,12 @@ const dataForm = ref({
 const isSignIn = ref(true);
 const isSignUp = ref(false);
 
-const isPasswordValid = computed(() => dataForm.value.password.length >= 8);
+const isPasswordValid = computed(() => {
+  const password = dataForm.value.password;
+  const regex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+  return regex.test(password);
+});
+
 const isPasswordConfirmed = computed(
   () => dataForm.value.password === dataForm.value.password_confirmation
 );
@@ -284,7 +307,8 @@ const login = async () => {
         title: "Đăng nhập thành công!",
       });
       retryDelay = 2000;
-      router.push("/");
+      const redirect = router.currentRoute.value.query.redirect || "/";
+      router.push(redirect);
     }
   } catch (error) {
     alert(error.response?.data.error);

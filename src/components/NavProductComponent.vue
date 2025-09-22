@@ -258,8 +258,10 @@ const fetchData = async (slug) => {
         .map((item) => item.id),
     ];
 
-    const filteredProducts = productData.filter((product) =>
-      categoryIds.includes(product.category_id)
+    const filteredProducts = productData.filter(
+      (product) =>
+        categoryIds.includes(product.category_id) &&
+        Number(product.available) !== 0
     );
     if (filteredProducts.length > 0) {
       dataChil.value = filteredProducts;

@@ -372,7 +372,7 @@
                   type="primary"
                   @click="onSubmit"
                   v-if="!PayPalButtonRef"
-                  :disabled="orderButton"
+                  :disabled="!formState.terms"
                   >Đặt hàng</a-button
                 >
                 <PayPalButton
@@ -402,7 +402,6 @@ import { Modal } from "ant-design-vue";
 
 const router = useRouter();
 const PayPalButtonRef = ref(false);
-const orderButton = ref(false);
 
 const dataTable = ref([]);
 
@@ -753,7 +752,7 @@ const rules = {
       trigger: "submit",
     },
     {
-      pattern: /^0\d{9,10}$/,
+      pattern: /^(0[3|5|7|8|9])[0-9]{8}$/,
       message: "Số điện thoại không hợp lệ",
       trigger: "blur",
     },
@@ -824,8 +823,13 @@ const rules = {
   ],
 };
 
+//CẦN UPDATE
 const onSubmit = async () => {
-  orderButton.value = true;
+  if (!formState.terms) {
+    console.log("Vui lòng chấp nhận điều khoản");
+    return;
+  }
+
   if (!formState.province) {
     handleProvinceChange(LocateState.province);
   }
@@ -835,62 +839,119 @@ const onSubmit = async () => {
   if (!formState.subdistrict) {
     handleSubdistrictChange(LocateState.subdistrict);
   }
+
+  formState.subdistrict = formState.subdistrict
+    ? Number(formState.subdistrict)
+    : null;
+  formState.district = formState.district ? Number(formState.district) : null;
+  formState.province = formState.province ? Number(formState.province) : null;
+
   try {
-    const modal = Modal.info({
-      title: "Đang xử lý đơn hàng...",
-      content: "Vui lòng chờ trong giây lát.",
-      okButtonProps: {
-        disabled: true,
-      },
-    });
     await formRef.value.validate();
-    if (formState.paymenttype == 1) {
-      PayPalButtonRef.value = true;
-    }
-    if (formState.paymenttype == 2 && formState) {
+  } catch (validationError) {
+    Modal.confirm({
+      title: "Thanh toán thất bại!",
+      content: "Vui lòng điền đầy đủ thông tin trước khi thanh toán.",
+    });
+
+    return;
+  }
+
+  if (formState.paymenttype === 1) {
+    PayPalButtonRef.value = true;
+    return;
+  }
+
+  if (formState.paymenttype === 2) {
+    const modalWait = Modal.info({
+      title: "Đang xử lý đơn hàng của bạn...",
+      content: "Vui lòng chờ trong giây lát",
+      okButtonProps: { disabled: true },
+    });
+    try {
       PayPalButtonRef.value = false;
 
       const response = await axios.post(
         `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
         formState
       );
-      modal.destroy();
-      if (response.status === 200 || response.status === 201) {
+
+      if (response.data) {
+        modalWait.destroy();
         store.dispatch("product/clearDataStoreCart");
-        Modal.success({
+        let secondsToGo = 5;
+        const modalSuccess = Modal.success({
           title: "Tạo đơn hàng thành công!",
+          content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
+          onOk() {
+            router.push(`/payment/order-received/${response.data.order_code}`);
+          },
         });
-        router.push(`/payment/order-received/${response.data.order_code}`);
-      } else {
-        Modal.error({
-          title: "Có lỗi trong quá trình tạo đơn vui lòng thử lại sau!",
-        });
+        const interval = setInterval(() => {
+          secondsToGo -= 1;
+          modalSuccess.update({
+            content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
+          });
+        }, 1000);
+        setTimeout(() => {
+          clearInterval(interval);
+          modalSuccess.destroy();
+          router.push(`/payment/order-received/${response.data.order_code}`);
+        }, secondsToGo * 1000);
       }
-      return;
-    }
-  } catch (error) {
-    modal.destroy();
-    if (error.status === 400) {
-      alert(error.response.data.message);
-      return;
-    } else {
-      alert("Có lỗi trong quá trình tạo đơn vui lòng thử lại sau");
-      return;
+    } catch (apiError) {
+      console.error("API error:", apiError);
+      modalWait.destroy();
+      if (apiError.response?.status === 400) {
+        alert(apiError.response.data.message);
+      } else {
+        alert("Có lỗi trong quá trình tạo đơn vui lòng thử lại sau");
+      }
     }
   }
 };
+//CẦN UPDATE
 
 const handlePaymentSuccess = async (orderID) => {
+  const modal = Modal.info({
+    title: "Đang xử lý đơn hàng của bạn...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
+      // formState
       JSON.parse(JSON.stringify(formState))
     );
-
+    modal.destroy();
     store.dispatch("product/clearDataStoreCart");
 
-    router.push(`/payment/order-received/${response.data.order_code}`);
+    let secondsToGo = 5;
+    const modalSuccess = Modal.success({
+      title: "Tạo đơn hàng thành công!",
+      content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
+      onOk() {
+        router.push(`/payment/order-received/${response.data.order_code}`);
+      },
+    });
+    const interval = setInterval(() => {
+      secondsToGo -= 1;
+      modalSuccess.update({
+        content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
+      });
+    }, 1000);
+    setTimeout(() => {
+      clearInterval(interval);
+      modalSuccess.destroy();
+      router.push(`/payment/order-received/${response.data.order_code}`);
+    }, secondsToGo * 1000);
   } catch (error) {
+    modal.destroy();
+    Modal.error({
+      title: "Tạo đơn hàng thất bại!",
+      content: `${error.response.data.message}`,
+    });
     console.error("Error adding order to database:", error);
   }
 };
