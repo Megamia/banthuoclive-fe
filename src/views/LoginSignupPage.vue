@@ -284,34 +284,38 @@ const login = async () => {
 
   isLoggingIn = true;
   try {
+    axios.defaults.withCredentials = true;
+
+    await axios.get(`${import.meta.env.VITE_APP_URL_API}/sanctum/csrf-cookie`);
+
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API}/login`,
       {
         email: dataForm.value.email,
         password: dataForm.value.password,
-      },
-      { withCredentials: true }
+      }
     );
 
-    if (response.status === 205) {
-      // alert("Sai tài khoản hoặc mật khẩu!");
-      Modal.error({
-        title: "Sai tài khoản hoặc mật khẩu!",
-      });
-      retryDelay = Math.min(retryDelay);
-      return;
-    } else if (response.data) {
+    if (response.status === 200 && response.data?.user) {
       sessionStorage.setItem("user", JSON.stringify(response.data.user));
-      // alert("Đăng nhập thành công!");
+
       Modal.success({
         title: "Đăng nhập thành công!",
       });
+
       retryDelay = 2000;
       const redirect = router.currentRoute.value.query.redirect || "/";
       router.push(redirect);
+    } else {
+      Modal.error({
+        title: "Sai tài khoản hoặc mật khẩu!",
+      });
     }
   } catch (error) {
-    alert(error.response?.data.error);
+    Modal.error({
+      title: error.response?.data?.message || "Đăng nhập thất bại!",
+    });
+
     retryDelay = Math.min(retryDelay * 2, 10000);
   } finally {
     lastLoginAttempt = Date.now();
