@@ -292,6 +292,8 @@ const login = async () => {
       }
     );
 
+    console.log("login: ",response);
+    
     if (response.status === 200 && response.data?.user) {
       sessionStorage.setItem("user", JSON.stringify(response.data.user));
 
