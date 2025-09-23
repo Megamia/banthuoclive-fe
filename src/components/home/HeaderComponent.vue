@@ -243,28 +243,30 @@ const showLogoutConfirm = () => {
 };
 
 const handleLogout = async () => {
+  if (!token) return;
+
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_APP_URL_API}/logout`,
+      `${import.meta.env.VITE_APP_URL_API}/apiUser/logout`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
-    console.log("logout: ",response);
-    
 
-    if (response.data) {
+    if (response.data?.message === 'logged_out') {
       localStorage.removeItem("token");
       sessionStorage.removeItem("user");
       isLogin.value = false;
       router.push("/");
     }
+
   } catch (error) {
     console.error("Đăng xuất thất bại:", error.response?.data || error.message);
     alert("Đăng xuất thất bại! Vui lòng kiểm tra lại.");
   }
 };
+
 
 watch(
   () => route.fullPath,
