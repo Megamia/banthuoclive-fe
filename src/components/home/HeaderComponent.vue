@@ -181,10 +181,10 @@ const route = useRoute();
 const isLogin = ref(false);
 const firstName = ref("");
 const searchInputHover = ref(false);
+const token = localStorage.getItem("token");
 
 const getUser = async () => {
   try {
-    const token = localStorage.getItem("token");
     console.log("token header: ", token);
 
     const response = await axios.post(
@@ -248,11 +248,12 @@ const handleLogout = async () => {
       `${import.meta.env.VITE_APP_URL_API}/logout`,
       {},
       {
-        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
 
     if (response.data) {
+      localStorage.removeItem("token");
       sessionStorage.removeItem("user");
       isLogin.value = false;
       router.push("/");
