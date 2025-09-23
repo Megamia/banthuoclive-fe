@@ -289,11 +289,14 @@ const login = async () => {
       {
         email: dataForm.value.email,
         password: dataForm.value.password,
+      },
+      {
+        withCredentials: true,
       }
     );
 
-    console.log("login: ",response);
-    
+    console.log("login: ", response);
+
     if (response.status === 200 && response.data?.user) {
       sessionStorage.setItem("user", JSON.stringify(response.data.user));
 
