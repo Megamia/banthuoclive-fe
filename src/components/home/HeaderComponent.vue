@@ -251,6 +251,8 @@ const handleLogout = async () => {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
+    console.log("logout: ",response);
+    
 
     if (response.data) {
       localStorage.removeItem("token");
