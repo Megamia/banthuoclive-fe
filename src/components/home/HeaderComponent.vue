@@ -184,10 +184,11 @@ const searchInputHover = ref(false);
 
 const getUser = async () => {
   try {
+    const token = localStorage.getItem("token");
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
       {},
-      { withCredentials: true }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     console.log("header: ", response);
 

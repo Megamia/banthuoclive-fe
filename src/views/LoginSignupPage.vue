@@ -296,6 +296,7 @@ const login = async () => {
     );
 
     console.log("login: ", response);
+    localStorage.setItem("token", response.data.token);
 
     if (response.status === 200 && response.data?.user) {
       sessionStorage.setItem("user", JSON.stringify(response.data.user));

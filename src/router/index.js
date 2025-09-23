@@ -137,10 +137,13 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth) {
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.post(
         `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
         {},
-        { withCredentials: true }
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
       console.log("router: ", response);
 
