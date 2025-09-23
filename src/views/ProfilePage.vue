@@ -811,6 +811,11 @@ const fetchProvinceNameById = (id) => {
   return province ? province.ProvinceName : "";
 };
 
+const fetchSubdistrictNameById = (id) => {
+  const ward = wards.value.find((w) => String(w.WardCode) === String(id));
+  return ward ? ward.WardName : "";
+};
+
 const getDistrictsByProvinceId = async (provinceId) => {
   if (!provinceId) return [];
   try {
@@ -886,7 +891,7 @@ const onProvinceChange = async (provinceCode) => {
     districts.value = response.data.data || [];
 
     const currentDistrictExists = districts.value.some(
-      (district) => district.ProvinceID === provinceCode
+      (district) => Number(district.ProvinceID) === Number(provinceCode)
     );
 
     if (!currentDistrictExists) {
@@ -912,7 +917,7 @@ const onDistrictChange = async (districtCode) => {
 
     wards.value = response.data.data || [];
     const currentWardExists = wards.value.some(
-      (ward) => ward.DistrictID === districtCode
+      (ward) => Number(ward.DistrictID) === Number(districtCode)
     );
 
     if (!currentWardExists) {
@@ -928,42 +933,68 @@ const onDistrictChange = async (districtCode) => {
 const fetchProfile = async (storedUser) => {
   if (!storedUser) return;
   const user = JSON.parse(storedUser);
-  console.log("rprofile user: ", user);
 
-  profile.value.first_name = user?.first_name || user?.name || "";
-  profile.value.last_name = user?.last_name || user?.surname || "";
+  profile.value.first_name = user?.first_name;
+  profile.value.last_name = user?.last_name;
   profile.value.email = user.email;
-  profile.value.phone = user.additional_user?.phone || null;
-  if (user.additional_user?.province) {
-    await onProvinceChange(user.additional_user.province);
-    profile.value.province = user.additional_user.province;
+  profile.value.phone = user?.phone || null;
+  profile.value.address = user?.address || "";
+
+  const provinceCode = user?.province ? Number(user.province) : null;
+  const districtCode = user?.district ? Number(user.district) : null;
+  const wardCode = user?.subdistrict ? Number(user.subdistrict) : null;
+
+  if (provinceCode) {
+    profile.value.province = provinceCode;
+    await onProvinceChange(provinceCode);
   }
-  profile.value.district = user.additional_user?.district || null;
-  profile.value.subdistrict = user.additional_user?.subdistrict
-    ? user.additional_user.subdistrict.toString()
-    : null;
-  if (profile.value.province) {
-    await onProvinceChange(profile.value.province);
+
+  if (
+    districtCode &&
+    districts.value.some((d) => Number(d.ProvinceID) === provinceCode)
+  ) {
+    profile.value.district = districtCode;
+    await onDistrictChange(districtCode);
   }
-  profile.value.address = user.additional_user?.address || "";
+
+  if (
+    wardCode &&
+    wards.value.some((w) => Number(w.DistrictID) === districtCode)
+  ) {
+    profile.value.subdistrict = fetchSubdistrictNameById(wardCode);
+  } else {
+    profile.value.subdistrict = null;
+  }
+
   getAllDataOrder(user.id);
 };
 
 const handleChangeInfo = async () => {
   try {
+    const payload = {
+      ...profile.value,
+      province: profile.value.province ? Number(profile.value.province) : null,
+      district: profile.value.district ? Number(profile.value.district) : null,
+      subdistrict: profile.value.subdistrict
+        ? Number(profile.value.subdistrict)
+        : null,
+    };
+
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/change-info`,
-      profile.value,
+      payload,
       { withCredentials: true }
     );
 
-    if (response.data) {
+    if (response.data.status === 1) {
       Modal.success({
         title: "Cập nhật thông tin tài khoản thành công!",
       });
+
       handleEditInfo();
-      sessionStorage.clear("user");
-      sessionStorage.setItem("user", JSON.stringify(response.data));
+
+      sessionStorage.setItem("user", JSON.stringify(response.data.newDataUser));
+      fetchProfile(sessionStorage.getItem("user"));
     } else if (response.status == 205) {
       Modal.error({
         title: "Vui lòng đăng nhập để sử dụng dịch vụ!",
@@ -972,6 +1003,7 @@ const handleChangeInfo = async () => {
       router.push("/login");
     }
   } catch (error) {
+    console.log("error: ", error);
     if (error.response && error.response.status === 401) {
       Modal.error({
         title: "Bạn chưa đăng nhập. Đang chuyển hướng...!",

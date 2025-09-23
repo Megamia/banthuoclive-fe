@@ -185,17 +185,12 @@ const token = localStorage.getItem("token");
 
 const getUser = async () => {
   try {
-    console.log("token header: ", token);
-
-    const response = await axios.post(
+    const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
+      { withCredentials: true }
     );
-    console.log("header: ", response);
-
-    if (response.status === 200 && response.data) {
-      const user = response.data;
+    if (response.data.status === 1 ) {
+      const user = response.data.user;
       sessionStorage.setItem("user", JSON.stringify(user));
       firstName.value = user.first_name;
       isLogin.value = true;
@@ -243,21 +238,18 @@ const showLogoutConfirm = () => {
 };
 
 const handleLogout = async () => {
-  console.log("logout token: ", token);
-
   if (!token) return;
 
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_APP_URL_API}/logout`,
+      `${import.meta.env.VITE_APP_URL_API_USER}/logout`,
       {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { withCredentials: true }
     );
-    console.log("logout :", response);
-
-    if (response.data?.message === "logged_out") {
+    if (response.data.status === 1) {
+      Modal.success({
+        title: "Đăng xuất thành công!",
+      });
       localStorage.removeItem("token");
       sessionStorage.removeItem("user");
       isLogin.value = false;

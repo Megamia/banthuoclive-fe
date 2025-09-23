@@ -285,7 +285,7 @@ const login = async () => {
   isLoggingIn = true;
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_APP_URL_API}/login`,
+      `${import.meta.env.VITE_APP_URL_API_USER}/login`,
       {
         email: dataForm.value.email,
         password: dataForm.value.password,
@@ -295,10 +295,8 @@ const login = async () => {
       }
     );
 
-    console.log("login: ", response);
-    localStorage.setItem("token", response.data.token);
-
     if (response.status === 200 && response.data?.user) {
+      localStorage.setItem("token", response.data.token);
       sessionStorage.setItem("user", JSON.stringify(response.data.user));
 
       Modal.success({
@@ -326,15 +324,26 @@ const login = async () => {
 };
 
 const signup = async () => {
+  console.log(dataForm.value);
   try {
+    const dataToPost = {
+      email: dataForm.value.email,
+      first_name: dataForm.value.first_name,
+      password: dataForm.value.password,
+    };
+    console.log("dataToPost: ", dataToPost);
+
     const response = await axios.post(
-      `${import.meta.env.VITE_APP_URL_API}/signup`,
-      dataForm.value
+      `${import.meta.env.VITE_APP_URL_API_USER}/signup`,
+      dataToPost
     );
-    Modal.success({
-      title: "Đăng ký thành công!",
-    });
-    toggleForm();
+    if (response.data.status === 1) {
+      Modal.success({
+        title: "Đăng ký thành công!",
+      });
+      toggleForm();
+    }
+    return;
   } catch (error) {
     let errorMessage = "Đăng ký failed! Please check your credentials.";
     if (error.response && error.response.data) {

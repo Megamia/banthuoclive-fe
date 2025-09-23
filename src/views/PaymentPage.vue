@@ -473,14 +473,14 @@ const checkUser = () => {
   if (user) {
     formState.user_id = user.id;
     formState.name = `${user.last_name || ""} ${user.first_name || ""}`.trim();
-    formState.phone = user.additional_user?.phone;
+    formState.phone = user?.phone;
     formState.email = user.email;
-    LocateState.province = user.additional_user?.province;
+    LocateState.province = user?.province;
     onProvinceChange();
-    LocateState.district = user.additional_user?.district;
+    LocateState.district = user?.district;
     onDistrictChange();
-    LocateState.subdistrict = user.additional_user?.subdistrict;
-    formState.address = user.additional_user?.address;
+    LocateState.subdistrict = user?.subdistrict;
+    formState.address = user?.address;
   }
 };
 

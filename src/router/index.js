@@ -141,28 +141,30 @@ router.beforeEach(async (to, from, next) => {
 
   try {
     const cachedUser = sessionStorage.getItem("user");
-    if (cachedUser) {
+    const token = localStorage.getItem("token");
+
+    if (cachedUser || token) {
       return next();
     }
 
-    const token = localStorage.getItem("token");
     if (!token) {
-      sessionStorage.removeItem("user");
+      localStorage.removeItem("user");
       return next({ name: "login", query: { redirect: to.fullPath } });
     }
-    console.log("Token route:", token);
 
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
       {
         headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       }
     );
-    console.log("res route: ", response);
 
+    console.log("route: ", response);
 
-    if (response.status === 200 && response.data) {
-      sessionStorage.setItem("user", JSON.stringify(response.data));
+    if (response.status === 200 && response.data.user) {
+      sessionStorage.setItem("user", JSON.stringify(response.data.user));
+      console.log("route: ", sessionStorage.getItem("user"));
       next();
     } else {
       Modal.error({
@@ -178,6 +180,8 @@ router.beforeEach(async (to, from, next) => {
     next({ name: "login", query: { redirect: to.fullPath } });
   }
 });
+
+
 
 
 export default router;
