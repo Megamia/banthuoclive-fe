@@ -137,9 +137,10 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth) {
     try {
-      axios.defaults.withCredentials = true;
       const response = await axios.post(
         `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
+        {},
+        { withCredentials: true }
       );
       console.log("router: ", response);
 
