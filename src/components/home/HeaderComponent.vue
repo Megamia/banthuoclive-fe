@@ -187,19 +187,10 @@ const getUser = async () => {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
       {},
-      {
-        withCredentials: true,
-      }
+      { withCredentials: true }
     );
-    if (response.status === 204) {
-      console.log("Token lỗi hoặc đã hết hạn!");
-      sessionStorage.removeItem("user");
-      isLogin.value = false;
-      return;
-    }
-    if (response.status === 205) {
-      return;
-    } else if (response.data) {
+
+    if (response.status === 200 && response.data) {
       const user = response.data;
       sessionStorage.setItem("user", JSON.stringify(user));
       firstName.value = user.first_name;
@@ -209,8 +200,8 @@ const getUser = async () => {
     }
   } catch (error) {
     console.error("Failed to fetch user profile:", error);
-    if (error.response && error.response.status === 401) {
-      console.log("Chưa đăng nhập");
+    if (error.response?.status === 401) {
+      console.log("Token lỗi hoặc chưa đăng nhập");
       sessionStorage.removeItem("user");
     }
     isLogin.value = false;
