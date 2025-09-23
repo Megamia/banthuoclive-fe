@@ -291,7 +291,7 @@ const login = async () => {
       {
         withCredentials: true,
       }
-    );  
+    );
 
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API}/login`,
@@ -300,6 +300,7 @@ const login = async () => {
         password: dataForm.value.password,
       }
     );
+    console.log("login: ", response);
 
     if (response.status === 200 && response.data?.user) {
       sessionStorage.setItem("user", JSON.stringify(response.data.user));
