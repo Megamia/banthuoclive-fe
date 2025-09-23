@@ -189,6 +189,7 @@ const getUser = async () => {
       {},
       { withCredentials: true }
     );
+    console.log("header: ", response);
 
     if (response.status === 200 && response.data) {
       const user = response.data;

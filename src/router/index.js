@@ -141,6 +141,8 @@ router.beforeEach(async (to, from, next) => {
       const response = await axios.post(
         `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
       );
+      console.log("router: ", response);
+
 
       if (response.status === 200 && response.data) {
         sessionStorage.setItem("user", JSON.stringify(response.data));
