@@ -243,6 +243,8 @@ const showLogoutConfirm = () => {
 };
 
 const handleLogout = async () => {
+  console.log("logout token: ", token);
+
   if (!token) return;
 
   try {
@@ -253,20 +255,19 @@ const handleLogout = async () => {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
+    console.log("logout :", response);
 
-    if (response.data?.message === 'logged_out') {
+    if (response.data?.message === "logged_out") {
       localStorage.removeItem("token");
       sessionStorage.removeItem("user");
       isLogin.value = false;
       router.push("/");
     }
-
   } catch (error) {
     console.error("Đăng xuất thất bại:", error.response?.data || error.message);
     alert("Đăng xuất thất bại! Vui lòng kiểm tra lại.");
   }
 };
-
 
 watch(
   () => route.fullPath,
