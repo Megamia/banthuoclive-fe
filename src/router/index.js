@@ -135,40 +135,49 @@ const router = createRouter({
   },
 });
 router.beforeEach(async (to, from, next) => {
-  if (to.meta.requiresAuth) {
-    try {
-      const token = localStorage.getItem('token');
-      console.log("token route: ", token);
+  if (!to.meta.requiresAuth) {
+    return next();
+  }
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      console.log("router: ", response);
+  try {
+    const cachedUser = sessionStorage.getItem("user");
+    if (cachedUser) {
+      return next();
+    }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      sessionStorage.removeItem("user");
+      return next({ name: "login", query: { redirect: to.fullPath } });
+    }
+    console.log("Token route:", token);
 
-      if (response.status === 200 && response.data) {
-        sessionStorage.setItem("user", JSON.stringify(response.data));
-        next();
-      } else {
-        Modal.error({
-          title: "Xác thực thông tin thất bại.",
-          content: "Vui lòng đăng nhập lại để sử dụng dịch vụ!"
-        });
-        sessionStorage.removeItem("user");
-        next({ name: "login", query: { redirect: to.fullPath } });
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
       }
-    } catch (error) {
-      console.error("Auth check failed:", error);
+    );
+    console.log("res route: ", response);
+
+
+    if (response.status === 200 && response.data) {
+      sessionStorage.setItem("user", JSON.stringify(response.data));
+      next();
+    } else {
+      Modal.error({
+        title: "Xác thực thông tin thất bại",
+        content: "Vui lòng đăng nhập lại để sử dụng dịch vụ!",
+      });
       sessionStorage.removeItem("user");
       next({ name: "login", query: { redirect: to.fullPath } });
     }
-  } else {
-    next();
+  } catch (error) {
+    console.error("Auth check failed:", error.response?.data || error.message);
+    sessionStorage.removeItem("user");
+    next({ name: "login", query: { redirect: to.fullPath } });
   }
 });
+
 
 export default router;
