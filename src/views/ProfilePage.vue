@@ -928,8 +928,10 @@ const onDistrictChange = async (districtCode) => {
 const fetchProfile = async (storedUser) => {
   if (!storedUser) return;
   const user = JSON.parse(storedUser);
-  profile.value.first_name = user?.first_name || user?.name || '';
-  profile.value.last_name = user?.last_name || user?.surname || '';
+  console.log("rprofile user: ", user);
+
+  profile.value.first_name = user?.first_name || user?.name || "";
+  profile.value.last_name = user?.last_name || user?.surname || "";
   profile.value.email = user.email;
   profile.value.phone = user.additional_user?.phone || null;
   if (user.additional_user?.province) {
