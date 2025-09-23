@@ -247,7 +247,7 @@ const handleLogout = async () => {
 
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_APP_URL_API_USER}/logout`,
+      `${import.meta.env.VITE_APP_URL_API}/logout`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },
