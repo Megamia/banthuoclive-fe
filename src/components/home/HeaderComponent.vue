@@ -184,14 +184,15 @@ const searchInputHover = ref(false);
 const token = localStorage.getItem("token");
 
 const getUser = async () => {
+  const token = localStorage.getItem("token");
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
-      { withCredentials: true }
+      {  headers: { Authorization: `Bearer ${token}` }, }
     );
     if (response.data.status === 1 ) {
       const user = response.data.user;
-      sessionStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("user", JSON.stringify(user));
       firstName.value = user.first_name;
       isLogin.value = true;
     } else {
@@ -201,14 +202,14 @@ const getUser = async () => {
     console.error("Failed to fetch user profile:", error);
     if (error.response?.status === 401) {
       console.log("Token lỗi hoặc chưa đăng nhập");
-      sessionStorage.removeItem("user");
+      localStorage.removeItem("user");
     }
     isLogin.value = false;
   }
 };
 
-const getUserSession = () => {
-  const storedUser = sessionStorage.getItem("user");
+const getDataUser = () => {
+  const storedUser = localStorage.getItem("user");
   if (storedUser) {
     const user = JSON.parse(storedUser);
     firstName.value = user.first_name;
@@ -219,7 +220,7 @@ const getUserSession = () => {
 };
 
 const checkUserSession = () => {
-  if (getUserSession() == true) {
+  if (getDataUser() == true) {
     getUser();
   } else {
     return;
@@ -251,7 +252,7 @@ const handleLogout = async () => {
         title: "Đăng xuất thành công!",
       });
       localStorage.removeItem("token");
-      sessionStorage.removeItem("user");
+      localStorage.removeItem("user");
       isLogin.value = false;
       router.push("/");
     }
@@ -265,7 +266,7 @@ watch(
   () => route.fullPath,
   () => {
     getdata();
-    getUserSession();
+    getDataUser();
   }
 );
 
@@ -296,18 +297,18 @@ const getdata = async () => {
 
     const categorizedProducts = categories.map((category) => {
       let categoryIds = [category.id];
-
       if (Array.isArray(category.children)) {
         category.children.forEach((child) => categoryIds.push(child.id));
       }
 
       const productsInCategory = allProducts.filter((product) =>
-        categoryIds.includes(product.category_id)
+        categoryIds.includes(Number(product.category_id))
       );
 
       const shuffled = productsInCategory.sort(() => 0.5 - Math.random());
 
       return {
+        id: ++maxId, 
         category,
         products: shuffled.slice(0, 4),
       };

@@ -653,7 +653,7 @@ const handleReceived = async (index, order_code, id) => {
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (error) {
-        console.error("Lỗi khi cập nhật trạng thái:", error);
+        // console.error("Lỗi khi cập nhật trạng thái:", error);
         Modal.error({
           title: "Xác nhận thất bại!",
           content: "Đã xảy ra lỗi khi gửi yêu cầu tới server.",
@@ -959,9 +959,9 @@ const fetchProfile = async (storedUser) => {
 
   if (
     wardCode &&
-    wards.value.some((w) => Number(w.DistrictID) === districtCode)
+    wards.value.some((w) => String(w.WardCode) === String(wardCode))
   ) {
-    profile.value.subdistrict = fetchSubdistrictNameById(wardCode);
+    profile.value.subdistrict = fetchSubdistrictNameById(wardCode);;
   } else {
     profile.value.subdistrict = null;
   }
@@ -971,6 +971,7 @@ const fetchProfile = async (storedUser) => {
 
 const handleChangeInfo = async () => {
   try {
+    const token = localStorage.getItem("token");
     const payload = {
       ...profile.value,
       province: profile.value.province ? Number(profile.value.province) : null,
@@ -983,7 +984,9 @@ const handleChangeInfo = async () => {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/change-info`,
       payload,
-      { withCredentials: true }
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
     );
 
     if (response.data.status === 1) {
@@ -993,13 +996,13 @@ const handleChangeInfo = async () => {
 
       handleEditInfo();
 
-      sessionStorage.setItem("user", JSON.stringify(response.data.newDataUser));
-      fetchProfile(sessionStorage.getItem("user"));
+      localStorage.setItem("user", JSON.stringify(response.data.newDataUser));
+      fetchProfile(localStorage.getItem("user"));
     } else if (response.status == 205) {
       Modal.error({
         title: "Vui lòng đăng nhập để sử dụng dịch vụ!",
       });
-      sessionStorage.clear("user");
+      localStorage.clear("user");
       router.push("/login");
     }
   } catch (error) {
@@ -1054,7 +1057,7 @@ const handleChangePassword = async () => {
       passwordForm.value.confirm_password = "";
     } else if (response.status == 205) {
       // alert("Chưa đăng nhập");
-      sessionStorage.clear("user");
+      localStorage.clear("user");
       router.push("/login");
     }
   } catch (error) {
@@ -1064,7 +1067,7 @@ const handleChangePassword = async () => {
 };
 
 onMounted(() => {
-  const storedUser = sessionStorage.getItem("user");
+  const storedUser = localStorage.getItem("user");
 
   fetchProvinces();
   fetchProfile(storedUser);
