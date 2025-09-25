@@ -338,12 +338,12 @@ watchEffect(() => {
   isLogin.value = !!firstName.value;
 });
 
-const fetchData = () => {
-  isLogin.value = !!firstName.value;
-};
+// const fetchData = () => {
+//   isLogin.value = !!firstName.value;
+// };
 
 onMounted(async () => {
-  await checkUserSession();
+  // await checkUserSession();
   getdata();
 });
 
