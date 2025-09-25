@@ -960,7 +960,6 @@ const fetchProfile = async (storedUser) => {
   const provinceCode = user?.province ? Number(user.province) : null;
   const districtCode = user?.district ? Number(user.district) : null;
   const wardCode = user?.subdistrict ? String(user.subdistrict) : null;
-  console.log("wardCode: ", wardCode);
 
   if (provinceCode) {
     profile.value.province = provinceCode;

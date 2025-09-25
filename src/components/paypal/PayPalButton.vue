@@ -35,11 +35,12 @@ onMounted(async () => {
             `${import.meta.env.VITE_APP_URL_API_PAYMENT}/createOrder`,
             { amount: props.amount }
           );
+          console.log("paypal: ", response);
 
           const data = response.data;
           if (data.status === "success") {
-            // console.log("Đã tạo đơn hàng"); 
-            return data.orderID; 
+            // console.log("Đã tạo đơn hàng");
+            return data.orderID;
           } else {
             console.error("Error creating order:", data.message);
             return null;
