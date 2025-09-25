@@ -324,8 +324,8 @@ const login = async () => {
 };
 
 const signup = async () => {
-  console.log(dataForm.value);
-  console.log(`${import.meta.env.VITE_APP_URL_API_USER}/signup`);
+  // console.log(dataForm.value);
+  // console.log(`${import.meta.env.VITE_APP_URL_API_USER}/signup`);
 
   try {
     const dataToPost = {
@@ -333,7 +333,7 @@ const signup = async () => {
       first_name: dataForm.value.first_name,
       password: dataForm.value.password,
     };
-    console.log("dataToPost: ", dataToPost);
+    // console.log("dataToPost: ", dataToPost);
 
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/signup`,
