@@ -469,7 +469,7 @@ const fetchDataTable = async () => {
 };
 
 const checkUser = () => {
-  const user = JSON.parse(sessionStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user"));
   if (user) {
     formState.user_id = user.id;
     formState.name = `${user.last_name || ""} ${user.first_name || ""}`.trim();
