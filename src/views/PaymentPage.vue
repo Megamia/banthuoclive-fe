@@ -378,6 +378,7 @@
                 <PayPalButton
                   v-if="PayPalButtonRef"
                   :amount="totals.subtotal"
+                  :form-state="formState"
                   @payment-success="handlePaymentSuccess"
                 />
               </a-flex>
@@ -893,11 +894,16 @@ const handlePaymentSuccess = async (orderID) => {
     okButtonProps: { disabled: true },
   });
   try {
+    const payload = {
+      ...JSON.parse(JSON.stringify(formState)),
+      paypal_order_id: orderID, 
+    };
+
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
-      // formState
-      JSON.parse(JSON.stringify(formState))
+      payload
     );
+
     modal.destroy();
     store.dispatch("product/clearDataStoreCart");
 
@@ -909,12 +915,14 @@ const handlePaymentSuccess = async (orderID) => {
         router.push(`/payment/order-received/${response.data.order_code}`);
       },
     });
+
     const interval = setInterval(() => {
       secondsToGo -= 1;
       modalSuccess.update({
         content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
       });
     }, 1000);
+
     setTimeout(() => {
       clearInterval(interval);
       modalSuccess.destroy();
@@ -924,7 +932,7 @@ const handlePaymentSuccess = async (orderID) => {
     modal.destroy();
     Modal.error({
       title: "Tạo đơn hàng thất bại!",
-      content: `${error.response.data.message}`,
+      content: `${error.response?.data?.message || error.message}`,
     });
     console.error("Error adding order to database:", error);
   }
