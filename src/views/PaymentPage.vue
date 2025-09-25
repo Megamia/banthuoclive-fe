@@ -896,13 +896,14 @@ const handlePaymentSuccess = async (orderID) => {
   try {
     const payload = {
       ...JSON.parse(JSON.stringify(formState)),
-      paypal_order_id: orderID, 
+      paypal_order_id: orderID,
     };
 
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
       payload
     );
+    console.log("paypal: ", response);
 
     modal.destroy();
     store.dispatch("product/clearDataStoreCart");
