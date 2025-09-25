@@ -878,6 +878,7 @@ const fetchProvinces = async () => {
   try {
     const response = await axios.get(`${host}/ghn/provinces`);
     provinces.value = response.data.data || [];
+    console.log("provinces: ", response);
   } catch (error) {
     console.error("Failed to fetch GHN provinces:", error);
   }
@@ -889,6 +890,7 @@ const onProvinceChange = async (provinceCode) => {
   try {
     const response = await axios.get(`${host}/ghn/districts/${provinceCode}`);
     districts.value = response.data.data || [];
+    console.log("districts: ", response);
 
     const currentDistrictExists = districts.value.some(
       (district) => Number(district.ProvinceID) === Number(provinceCode)
@@ -914,6 +916,7 @@ const onDistrictChange = async (districtCode) => {
   isUpdatingDistrict = true;
   try {
     const response = await axios.get(`${host}/ghn/wards/${districtCode}`);
+    console.log("wards: ", response);
 
     wards.value = response.data.data || [];
     const currentWardExists = wards.value.some(
@@ -961,7 +964,7 @@ const fetchProfile = async (storedUser) => {
     wardCode &&
     wards.value.some((w) => String(w.WardCode) === String(wardCode))
   ) {
-    profile.value.subdistrict = fetchSubdistrictNameById(wardCode);;
+    profile.value.subdistrict = fetchSubdistrictNameById(wardCode);
   } else {
     profile.value.subdistrict = null;
   }
