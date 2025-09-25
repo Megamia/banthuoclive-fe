@@ -223,13 +223,13 @@ const getDataUser = () => {
   return false;
 };
 
-const checkUserSession = () => {
-  if (getDataUser() == true) {
-    getUser();
-  } else {
-    return;
+const checkUserSession = async () => {
+  const hasUser = getDataUser();
+  if (hasUser) {
+    await getUser();
   }
 };
+
 const showLogoutConfirm = () => {
   Modal.confirm({
     title: "Chắc chắn đăng xuất?",
@@ -351,9 +351,8 @@ const fetchData = () => {
   isLogin.value = !!firstName.value;
 };
 
-onMounted(() => {
-  fetchData();
-  checkUserSession();
+onMounted(async () => {
+  await checkUserSession();
   getdata();
 });
 
