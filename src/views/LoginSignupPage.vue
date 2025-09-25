@@ -325,6 +325,8 @@ const login = async () => {
 
 const signup = async () => {
   console.log(dataForm.value);
+  console.log(`${import.meta.env.VITE_APP_URL_API_USER}/signup`);
+
   try {
     const dataToPost = {
       email: dataForm.value.email,
