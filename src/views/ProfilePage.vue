@@ -877,7 +877,6 @@ const host = import.meta.env.VITE_APP_URL_API_GHN;
 const fetchProvinces = async () => {
   try {
     const response = await axios.get(`${host}/ghn/provinces`);
-    console.log("provinces: ", response);
     if (response.data.status === 1) {
       provinces.value = response.data.data || [];
     }
@@ -891,7 +890,6 @@ const onProvinceChange = async (provinceCode) => {
   isUpdatingProvince = true;
   try {
     const response = await axios.get(`${host}/ghn/districts/${provinceCode}`);
-    console.log("districts: ", response);
     if (response.data.status === 1) {
       districts.value = response.data.data || [];
     }
@@ -920,7 +918,6 @@ const onDistrictChange = async (districtCode) => {
   isUpdatingDistrict = true;
   try {
     const response = await axios.get(`${host}/ghn/wards/${districtCode}`);
-    console.log("wards: ", response);
     if (response.data.status === 1) {
       wards.value = response.data.data || [];
     }

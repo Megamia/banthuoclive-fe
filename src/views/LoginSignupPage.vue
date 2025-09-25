@@ -281,7 +281,11 @@ const login = async () => {
     });
     return;
   }
-
+  const modalLoadig = Modal.info({
+    title: "Đang xử lý...",
+    centered: true,
+    closable: false,
+  });
   isLoggingIn = true;
   try {
     const response = await axios.post(
@@ -296,8 +300,9 @@ const login = async () => {
     );
 
     if (response.status === 200 && response.data?.user) {
+      modalLoadig.destroy();
       localStorage.setItem("token", response.data.token);
-      sessionStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
       Modal.success({
         title: "Đăng nhập thành công!",
@@ -326,7 +331,11 @@ const login = async () => {
 const signup = async () => {
   // console.log(dataForm.value);
   // console.log(`${import.meta.env.VITE_APP_URL_API_USER}/signup`);
-
+  const modalLoadig = Modal.info({
+    title: "Đang xử lý...",
+    centered: true,
+    closable: false,
+  });
   try {
     const dataToPost = {
       email: dataForm.value.email,
@@ -340,6 +349,7 @@ const signup = async () => {
       dataToPost
     );
     if (response.data.status === 1) {
+      modalLoadig.destroy();
       Modal.success({
         title: "Đăng ký thành công!",
       });

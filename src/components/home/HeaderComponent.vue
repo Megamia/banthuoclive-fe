@@ -183,50 +183,42 @@ const firstName = ref("");
 const searchInputHover = ref(false);
 const token = localStorage.getItem("token");
 
-const getUser = async () => {
-  const token = localStorage.getItem("token");
-  console.log("token");
-
-  try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log("header: ", response);
-
-    if (response.data.status === 1) {
-      const user = response.data.user;
-      localStorage.setItem("user", JSON.stringify(user));
-      firstName.value = user.first_name;
-      isLogin.value = true;
-    } else {
-      isLogin.value = false;
-    }
-  } catch (error) {
-    console.error("Failed to fetch user profile:", error);
-    if (error.response?.status === 401) {
-      console.log("Token lỗi hoặc chưa đăng nhập");
-      localStorage.removeItem("user");
-    }
-    isLogin.value = false;
-  }
-};
-
-const getDataUser = () => {
+const loadUser = async () => {
   const storedUser = localStorage.getItem("user");
+  const token = localStorage.getItem("token");
+
   if (storedUser) {
     const user = JSON.parse(storedUser);
     firstName.value = user.first_name;
     isLogin.value = true;
-    return true;
   }
-  return false;
-};
 
-const checkUserSession = async () => {
-  const hasUser = getDataUser();
-  if (hasUser) {
-    await getUser();
+  if (token) {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.status === 1 && response.data.user) {
+        const user = response.data.user;
+        localStorage.setItem("user", JSON.stringify(user));
+        firstName.value = user.first_name;
+        isLogin.value = true;
+      } else {
+        localStorage.removeItem("user");
+        isLogin.value = false;
+        firstName.value = "";
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      localStorage.removeItem("user");
+      isLogin.value = false;
+      firstName.value = "";
+    }
+  } else {
+    isLogin.value = false;
+    firstName.value = "";
   }
 };
 
@@ -244,7 +236,11 @@ const showLogoutConfirm = () => {
 
 const handleLogout = async () => {
   if (!token) return;
-
+  const modalLoadig = Modal.info({
+    title: "Đang xử lý...",
+    centered: true,
+    closable: false,
+  });
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/logout`,
@@ -252,6 +248,7 @@ const handleLogout = async () => {
       { withCredentials: true }
     );
     if (response.data.status === 1) {
+      modalLoadig.destroy();
       Modal.success({
         title: "Đăng xuất thành công!",
       });
@@ -266,13 +263,7 @@ const handleLogout = async () => {
   }
 };
 
-watch(
-  () => route.fullPath,
-  () => {
-    getdata();
-    getDataUser();
-  }
-);
+watch(() => route.fullPath, loadUser);
 
 const data = ref({});
 

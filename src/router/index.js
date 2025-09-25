@@ -161,6 +161,7 @@ router.beforeEach(async (to, from, next) => {
 
     if (response.data.status === 1 && response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
+      window.dispatchEvent(new Event("user-logged-in"));
       return next();
     }
 
