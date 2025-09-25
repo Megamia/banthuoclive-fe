@@ -134,10 +134,10 @@ const router = createRouter({
     return { top: 0, behavior: "smooth" };
   },
 });
+
 router.beforeEach(async (to, from, next) => {
   if (!to.meta.requiresAuth) return next();
 
-  const cachedUser = localStorage.getItem("user");
   const token = localStorage.getItem("token");
 
   const redirectToLogin = () => {
@@ -146,18 +146,24 @@ router.beforeEach(async (to, from, next) => {
       content: "Vui lòng đăng nhập lại để sử dụng dịch vụ!",
     });
     localStorage.removeItem("user");
-    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     return next({ name: "login", query: { redirect: to.fullPath } });
   };
 
   try {
-    if (cachedUser && token) return next();
-
     if (!token) return redirectToLogin();
 
-    const response = await axios.get(`${import.meta.env.VITE_APP_URL_API_USER}/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    let cachedUser = localStorage.getItem("user");
+    if (cachedUser) {
+      cachedUser = JSON.parse(cachedUser);
+      window.dispatchEvent(new Event("user-logged-in"));
+      return next();
+    }
+
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
     if (response.data.status === 1 && response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -171,5 +177,6 @@ router.beforeEach(async (to, from, next) => {
     return redirectToLogin();
   }
 });
+
 
 export default router;

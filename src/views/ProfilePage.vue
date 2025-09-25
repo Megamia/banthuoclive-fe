@@ -603,13 +603,22 @@ let isUpdatingDistrict = false;
 
 const phoneError = ref("");
 
-const validatePhone = (e) => {
-  const value = e.target.value;
+const validatePhoneValue = (value) => {
+  if (!value) {
+    phoneError.value = "Số điện thoại là bắt buộc.";
+    return false;
+  }
   const regex = /^(0[3|5|7|8|9])[0-9]{8}$/;
-  phoneError.value = regex.test(value)
-    ? ""
-    : "Số điện thoại phải bắt đầu bằng 03, 05, 07, 08, 09 và có 10 số.";
+  if (!regex.test(value)) {
+    phoneError.value =
+      "Số điện thoại phải bắt đầu bằng 03, 05, 07, 08, 09 và có 10 số.";
+    return false;
+  }
+  phoneError.value = "";
+  return true;
 };
+
+const validatePhone = (e) => validatePhoneValue(e.target.value);
 
 const toggleDetail = (index, code) => {
   if (selectedOrderIndex.value === index) {
@@ -921,6 +930,7 @@ const onDistrictChange = async (districtCode) => {
     if (response.data.status === 1) {
       wards.value = response.data.data || [];
     }
+    // console.log("wards.value: ", wards.value);
 
     const currentWardExists = wards.value.some(
       (ward) => Number(ward.DistrictID) === Number(districtCode)
@@ -928,6 +938,7 @@ const onDistrictChange = async (districtCode) => {
 
     if (!currentWardExists) {
       profile.value.subdistrict = null;
+      return;
     }
   } catch (error) {
     console.error("Failed to fetch wards:", error);
@@ -948,7 +959,8 @@ const fetchProfile = async (storedUser) => {
 
   const provinceCode = user?.province ? Number(user.province) : null;
   const districtCode = user?.district ? Number(user.district) : null;
-  const wardCode = user?.subdistrict ? Number(user.subdistrict) : null;
+  const wardCode = user?.subdistrict ? String(user.subdistrict) : null;
+  console.log("wardCode: ", wardCode);
 
   if (provinceCode) {
     profile.value.province = provinceCode;
@@ -962,12 +974,8 @@ const fetchProfile = async (storedUser) => {
     profile.value.district = districtCode;
     await onDistrictChange(districtCode);
   }
-
-  if (
-    wardCode &&
-    wards.value.some((w) => String(w.WardCode) === String(wardCode))
-  ) {
-    profile.value.subdistrict = fetchSubdistrictNameById(wardCode);
+  if (wardCode && wards.value.some((w) => String(w.WardCode) === wardCode)) {
+    profile.value.subdistrict = wardCode;
   } else {
     profile.value.subdistrict = null;
   }
@@ -976,14 +984,16 @@ const fetchProfile = async (storedUser) => {
 };
 
 const handleChangeInfo = async () => {
+  if (!validatePhoneValue(profile.value.phone)) return;
   try {
     const token = localStorage.getItem("token");
+
     const payload = {
       ...profile.value,
       province: profile.value.province ? Number(profile.value.province) : null,
       district: profile.value.district ? Number(profile.value.district) : null,
       subdistrict: profile.value.subdistrict
-        ? Number(profile.value.subdistrict)
+        ? String(profile.value.subdistrict)
         : null,
     };
 
@@ -997,14 +1007,14 @@ const handleChangeInfo = async () => {
 
     if (response.data.status === 1) {
       Modal.success({
-        title: "Cập nhật thông tin tài khoản thành công!",
+        title: `${response.data.message}`,
       });
 
       handleEditInfo();
 
       localStorage.setItem("user", JSON.stringify(response.data.newDataUser));
       fetchProfile(localStorage.getItem("user"));
-    } else if (response.status == 205) {
+    } else {
       Modal.error({
         title: "Vui lòng đăng nhập để sử dụng dịch vụ!",
       });
@@ -1013,14 +1023,14 @@ const handleChangeInfo = async () => {
     }
   } catch (error) {
     console.log("error: ", error);
-    if (error.response && error.response.status === 401) {
-      Modal.error({
-        title: "Bạn chưa đăng nhập. Đang chuyển hướng...!",
-      });
-      router.push("/login");
-    } else {
-      console.log(error);
-    }
+    // if (error.response && error.response.status === 401) {
+    //   Modal.error({
+    //     title: "Bạn chưa đăng nhập. Đang chuyển hướng...!",
+    //   });
+    //   router.push("/login");
+    // } else {
+    //   console.log(error);
+    // }
   }
 };
 

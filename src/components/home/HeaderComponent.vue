@@ -160,7 +160,7 @@
 <script setup>
 import MenuComponent from "../MenuComponent.vue";
 import SearchComponent from "../SearchComponent.vue";
-import { ref, onMounted, computed, watchEffect, watch, createVNode } from "vue";
+import { ref, onMounted, computed, watchEffect, createVNode } from "vue";
 import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
 import { Modal } from "ant-design-vue";
 import "./header.css";
@@ -181,46 +181,26 @@ const route = useRoute();
 const isLogin = ref(false);
 const firstName = ref("");
 const searchInputHover = ref(false);
-const token = localStorage.getItem("token");
 
-const loadUser = async () => {
-  const storedUser = localStorage.getItem("user");
+onMounted(() => {
+  const user = localStorage.getItem("user");
   const token = localStorage.getItem("token");
-
-  if (storedUser) {
-    const user = JSON.parse(storedUser);
-    firstName.value = user.first_name;
+  if (user && token) {
+    firstName.value = JSON.parse(user).first_name;
     isLogin.value = true;
   }
 
-  if (token) {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  window.addEventListener("user-logged-in", () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    firstName.value = user.first_name || "";
+    isLogin.value = true;
+  });
 
-      if (response.data.status === 1 && response.data.user) {
-        const user = response.data.user;
-        localStorage.setItem("user", JSON.stringify(user));
-        firstName.value = user.first_name;
-        isLogin.value = true;
-      } else {
-        localStorage.removeItem("user");
-        isLogin.value = false;
-        firstName.value = "";
-      }
-    } catch (error) {
-      console.error("Failed to fetch user profile:", error);
-      localStorage.removeItem("user");
-      isLogin.value = false;
-      firstName.value = "";
-    }
-  } else {
-    isLogin.value = false;
+  window.addEventListener("user-logged-out", () => {
     firstName.value = "";
-  }
-};
+    isLogin.value = false;
+  });
+});
 
 const showLogoutConfirm = () => {
   Modal.confirm({
@@ -235,11 +215,16 @@ const showLogoutConfirm = () => {
 };
 
 const handleLogout = async () => {
-  if (!token) return;
-  const modalLoadig = Modal.info({
-    title: "Đang xử lý...",
-    centered: true,
-    closable: false,
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.log("k có token");
+    return;
+  }
+
+  const modalWait = Modal.info({
+    title: "Đang xử lý yêu cầu.",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
   });
   try {
     const response = await axios.post(
@@ -248,9 +233,9 @@ const handleLogout = async () => {
       { withCredentials: true }
     );
     if (response.data.status === 1) {
-      modalLoadig.destroy();
+      modalWait.destroy();
       Modal.success({
-        title: "Đăng xuất thành công!",
+        title: `${response.data.message}`,
       });
       localStorage.removeItem("token");
       localStorage.removeItem("user");
@@ -259,11 +244,9 @@ const handleLogout = async () => {
     }
   } catch (error) {
     console.error("Đăng xuất thất bại:", error.response?.data || error.message);
-    alert("Đăng xuất thất bại! Vui lòng kiểm tra lại.");
+    // alert("Đăng xuất thất bại! Vui lòng kiểm tra lại.");
   }
 };
-
-watch(() => route.fullPath, loadUser);
 
 const data = ref({});
 

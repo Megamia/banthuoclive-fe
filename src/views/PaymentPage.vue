@@ -110,7 +110,7 @@
                     <a-select-option
                       v-for="ward in wards"
                       :key="ward.WardCode"
-                      :value="Number(ward.WardCode)"
+                      :value="ward.WardCode"
                     >
                       {{ ward.WardName }}
                     </a-select-option>
@@ -531,20 +531,11 @@ const host = import.meta.env.VITE_APP_URL_API_GHN;
 
 const fetchProvinces = async () => {
   try {
-    const token = localStorage.getItem("vuex");
-    if (!token) {
-      console.warn("Token not found");
-      return;
+    const response = await axios.get(`${host}/ghn/provinces`);
+    if (response.data.status === 1) {
+      provinces.value = response.data.data;
+      diffprovinces.value = response.data.data;
     }
-
-    const response = await axios.get(`${host}/ghn/provinces`, {
-      headers: {
-        Token: token,
-      },
-    });
-
-    provinces.value = response.data.data;
-    diffprovinces.value = response.data.data;
   } catch (error) {
     console.error("Failed to fetch GHN provinces:", error);
   }
@@ -553,21 +544,13 @@ const fetchProvinces = async () => {
 const onProvinceChange = async () => {
   const provinceCode = LocateState.province;
   const diffprovinceCode = LocateState.diffprovince;
-  const token = localStorage.getItem("vuex");
-  if (!token) {
-    console.warn("Token not found");
-    return;
-  }
 
   try {
     if (provinceCode) {
-      const response = await axios.get(
-        `${host}/ghn/districts/${provinceCode}`,
-        {
-          headers: { Token: token },
-        }
-      );
-      districts.value = response.data.data || [];
+      const response = await axios.get(`${host}/ghn/districts/${provinceCode}`);
+      if (response.data.status === 1) {
+        districts.value = response.data.data || [];
+      }
 
       if (!districts.value.some((d) => d.DistrictID === LocateState.district)) {
         LocateState.district = null;
@@ -605,18 +588,13 @@ const onProvinceChange = async () => {
 const onDistrictChange = async () => {
   const districtCode = LocateState.district;
   const diffdistrictCode = LocateState.diffdistrict;
-  const token = localStorage.getItem("vuex");
-  if (!token) {
-    console.warn("Token not found");
-    return;
-  }
 
   try {
     if (districtCode) {
-      const response = await axios.get(`${host}/ghn/wards/${districtCode}`, {
-        headers: { Token: token },
-      });
-      wards.value = response.data.data || [];
+      const response = await axios.get(`${host}/ghn/wards/${districtCode}`);
+      if (response.data.status === 1) {
+        wards.value = response.data.data || [];
+      }
       if (
         LocateState.subdistrict &&
         !wards.value.some(
@@ -825,11 +803,6 @@ const rules = {
 
 //CẦN UPDATE
 const onSubmit = async () => {
-  if (!formState.terms) {
-    console.log("Vui lòng chấp nhận điều khoản");
-    return;
-  }
-
   if (!formState.province) {
     handleProvinceChange(LocateState.province);
   }
@@ -868,6 +841,7 @@ const onSubmit = async () => {
       content: "Vui lòng chờ trong giây lát",
       okButtonProps: { disabled: true },
     });
+
     try {
       PayPalButtonRef.value = false;
 

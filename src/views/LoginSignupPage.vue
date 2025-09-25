@@ -281,10 +281,10 @@ const login = async () => {
     });
     return;
   }
-  const modalLoadig = Modal.info({
-    title: "Đang xử lý...",
-    centered: true,
-    closable: false,
+  const modalWait = Modal.info({
+    title: "Đang xử lý yêu cầu.",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
   });
   isLoggingIn = true;
   try {
@@ -300,23 +300,25 @@ const login = async () => {
     );
 
     if (response.status === 200 && response.data?.user) {
-      modalLoadig.destroy();
+      modalWait.destroy();
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
-
+      window.dispatchEvent(new Event("user-logged-in"));
       Modal.success({
-        title: "Đăng nhập thành công!",
+        title: `${response.data.message}`,
       });
 
       retryDelay = 2000;
       const redirect = router.currentRoute.value.query.redirect || "/";
       router.push(redirect);
     } else {
+      modalWait.destroy();
       Modal.error({
-        title: "Sai tài khoản hoặc mật khẩu!",
+        title: `${response.data.message}`,
       });
     }
   } catch (error) {
+    modalWait.destroy();
     Modal.error({
       title: error.response?.data?.message || "Đăng nhập thất bại!",
     });
@@ -329,12 +331,10 @@ const login = async () => {
 };
 
 const signup = async () => {
-  // console.log(dataForm.value);
-  // console.log(`${import.meta.env.VITE_APP_URL_API_USER}/signup`);
-  const modalLoadig = Modal.info({
-    title: "Đang xử lý...",
-    centered: true,
-    closable: false,
+  const modalWait = Modal.info({
+    title: "Đang xử lý yêu cầu.",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
   });
   try {
     const dataToPost = {
@@ -342,18 +342,20 @@ const signup = async () => {
       first_name: dataForm.value.first_name,
       password: dataForm.value.password,
     };
-    // console.log("dataToPost: ", dataToPost);
 
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/signup`,
       dataToPost
     );
+
     if (response.data.status === 1) {
-      modalLoadig.destroy();
+      modalWait.destroy();
       Modal.success({
-        title: "Đăng ký thành công!",
+        title: `${response.data.message}`,
       });
       toggleForm();
+    } else {
+      modalWait.destroy();
     }
     return;
   } catch (error) {
