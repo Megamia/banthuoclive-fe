@@ -185,12 +185,16 @@ const token = localStorage.getItem("token");
 
 const getUser = async () => {
   const token = localStorage.getItem("token");
+  console.log("token");
+
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_USER}/profile`,
-      {  headers: { Authorization: `Bearer ${token}` }, }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (response.data.status === 1 ) {
+    console.log("header: ", response);
+
+    if (response.data.status === 1) {
       const user = response.data.user;
       localStorage.setItem("user", JSON.stringify(user));
       firstName.value = user.first_name;
@@ -308,7 +312,7 @@ const getdata = async () => {
       const shuffled = productsInCategory.sort(() => 0.5 - Math.random());
 
       return {
-        id: ++maxId, 
+        id: ++maxId,
         category,
         products: shuffled.slice(0, 4),
       };
