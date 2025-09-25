@@ -877,8 +877,10 @@ const host = import.meta.env.VITE_APP_URL_API_GHN;
 const fetchProvinces = async () => {
   try {
     const response = await axios.get(`${host}/ghn/provinces`);
-    provinces.value = response.data.data || [];
     console.log("provinces: ", response);
+    if (response.data.status === 1) {
+      provinces.value = response.data.data || [];
+    }
   } catch (error) {
     console.error("Failed to fetch GHN provinces:", error);
   }
@@ -889,8 +891,10 @@ const onProvinceChange = async (provinceCode) => {
   isUpdatingProvince = true;
   try {
     const response = await axios.get(`${host}/ghn/districts/${provinceCode}`);
-    districts.value = response.data.data || [];
     console.log("districts: ", response);
+    if (response.data.status === 1) {
+      districts.value = response.data.data || [];
+    }
 
     const currentDistrictExists = districts.value.some(
       (district) => Number(district.ProvinceID) === Number(provinceCode)
@@ -917,8 +921,10 @@ const onDistrictChange = async (districtCode) => {
   try {
     const response = await axios.get(`${host}/ghn/wards/${districtCode}`);
     console.log("wards: ", response);
+    if (response.data.status === 1) {
+      wards.value = response.data.data || [];
+    }
 
-    wards.value = response.data.data || [];
     const currentWardExists = wards.value.some(
       (ward) => Number(ward.DistrictID) === Number(districtCode)
     );
