@@ -222,6 +222,11 @@ const handleCreateAppointment = async () => {
     meeting_time: meetingDateTime,
   };
 
+  const modalWait = Modal.info({
+    title: "Đang xử lý yêu cầu.",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/createAppointment`,
@@ -229,6 +234,7 @@ const handleCreateAppointment = async () => {
         data: dataToCreateNewAppointment,
       }
     );
+    modalWait.destroy();
     if (response.data.status === 1) {
       const dataAppointment = response.data.data;
       Modal.success({

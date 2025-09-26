@@ -268,16 +268,16 @@
                 />
                 <div class="mb-2 sm:mb-6">
                   <label
-                    for="old_password"
+                    for="current_password"
                     class="block mb-2 text-sm font-medium text-indigo-900 dark:text-white"
                     >Mật khẩu cũ</label
                   >
                   <div class="relative">
                     <input
                       :type="passwordVisibility.old ? 'text' : 'password'"
-                      id="old_password"
+                      id="current_password"
                       class="bg-indigo-50 border border-indigo-300 text-indigo-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
-                      v-model="passwordForm.old_password"
+                      v-model="passwordForm.current_password"
                       placeholder="Nhập mật khẩu cũ..."
                       autocomplete="current-password"
                       required
@@ -465,7 +465,7 @@
                 >
               </a-flex>
             </a-flex>
-            <a-flex vertical v-else-if="!dataGHN">
+            <a-flex vertical v-else-if="!dataGHN && isFind">
               <span>Bạn chưa có đơn hàng</span>
             </a-flex>
             <a-flex v-if="!isFind" vertical class="gap-[10px]">
@@ -678,6 +678,11 @@ const handleReceived = async (index, order_code, id) => {
 };
 
 const find = async (code) => {
+  const modalWait = Modal.info({
+    title: "Đang tìm kiếm đơn hàng của bạn...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const response = await axios.get(
       `https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/detail?order_code=${code}`,
@@ -688,6 +693,7 @@ const find = async (code) => {
         },
       }
     );
+    modalWait.destroy();
     if (response.status === 200) {
       dataGHN.value = response.data.data;
 
@@ -744,7 +750,6 @@ const getDataOrder = async (order_code) => {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_ORDER}/order/${order_code}`
     );
-
     if (response.status === 200) {
       const data = response.data.property;
 
@@ -776,10 +781,16 @@ const getDataOrder = async (order_code) => {
 };
 
 const getAllDataOrder = async (id) => {
+  const modalWait = Modal.info({
+    title: "Đang tìm kiếm đơn hàng của bạn...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_ORDER}/allDataOrder/${id}`
     );
+    modalWait.destroy();
     if (response.status === 200) {
       dataOrder.value = response.data;
       isReceived.value = dataOrder.value.map((order) => order.status_id === 2);
@@ -868,7 +879,7 @@ const passwordVisibility = ref({
 });
 
 const passwordForm = ref({
-  old_password: "",
+  current_password: "",
   new_password: "",
   confirm_password: "",
 });
@@ -930,7 +941,6 @@ const onDistrictChange = async (districtCode) => {
     if (response.data.status === 1) {
       wards.value = response.data.data || [];
     }
-    // console.log("wards.value: ", wards.value);
 
     const currentWardExists = wards.value.some(
       (ward) => Number(ward.DistrictID) === Number(districtCode)
@@ -1034,6 +1044,14 @@ const handleChangeInfo = async () => {
 };
 
 const handleChangePassword = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    Modal.error({
+      title: "Lỗi xác thực người dùng",
+      content: "Vui lòng đăng nhập để sử dụng dịch vụ",
+    });
+    return;
+  }
   errorMessage.value = "";
   successMessage.value = "";
   const newPassword = passwordForm.value.new_password;
@@ -1053,31 +1071,40 @@ const handleChangePassword = async () => {
     errorMessage.value = "Mật khẩu mới không khớp.";
     return;
   }
+  const modalWait = Modal.info({
+    title: "Đang xử lý yêu cầu của bạn...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/change-password`,
       {
-        old_password: passwordForm.value.old_password,
+        current_password: passwordForm.value.current_password,
         new_password: passwordForm.value.new_password,
       },
-      { withCredentials: true }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (response.data.status === 0) {
-      errorMessage.value = response.data.error;
-      return;
-    } else if (response.data.status === 1) {
+    modalWait.destroy();
+    if (response.data.status === 1 && response.data.code === 200) {
+      Modal.success({
+        title: "Xác nhận thành công!",
+        content: `${response.data.message}`,
+      });
       successMessage.value = response.data.message;
-      passwordForm.value.old_password = "";
+      passwordForm.value.current_password = "";
       passwordForm.value.new_password = "";
       passwordForm.value.confirm_password = "";
-    } else if (response.status == 205) {
-      // alert("Chưa đăng nhập");
-      localStorage.clear("user");
-      router.push("/login");
+    } else {
+      Modal.error({
+        title: "Xác nhận thất bại!",
+        content: `${response.data.message}`,
+      });
     }
   } catch (error) {
+    modalWait.destroy();
     errorMessage.value = "Có lỗi xảy ra! Vui lòng thử lại.";
-    console.log(errorMessage);
+    console.log(error);
   }
 };
 
