@@ -215,36 +215,31 @@ const showLogoutConfirm = () => {
 };
 
 const handleLogout = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    console.log("k có token");
-    return;
-  }
-
   const modalWait = Modal.info({
     title: "Đang xử lý yêu cầu.",
     content: "Vui lòng chờ trong giây lát",
     okButtonProps: { disabled: true },
   });
+
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_USER}/logout`,
       {},
       { withCredentials: true }
     );
+
     if (response.data.status === 1) {
       modalWait.destroy();
-      Modal.success({
-        title: `${response.data.message}`,
-      });
+      Modal.success({ title: response.data.message });
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       isLogin.value = false;
       router.push("/");
     }
   } catch (error) {
+    modalWait.destroy();
     console.error("Đăng xuất thất bại:", error.response?.data || error.message);
-    // alert("Đăng xuất thất bại! Vui lòng kiểm tra lại.");
+    Modal.error({ title: "Đăng xuất thất bại", content: "Vui lòng thử lại." });
   }
 };
 
@@ -293,6 +288,11 @@ const getdata = async () => {
     });
 
     const anotherData = [
+      {
+        id: ++maxId,
+        category: { name: "Đặt lịch khám", slug: "appointment" },
+        products: [],
+      },
       {
         id: ++maxId,
         category: { name: "Tin tức", slug: "news" },

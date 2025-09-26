@@ -129,6 +129,13 @@ const router = createRouter({
       component: () => import("../views/appointment/AppointmentPage.vue"),
       meta: { layout: "default", requiresAuth: true },
     },
+    {
+      path: "/detail-appointment/:id",
+      name: "detailAppointment",
+      component: () => import("../views/appointment/DetailAppointmentPage.vue"),
+      meta: { layout: "default", requiresAuth: false },
+    },
+
   ],
   scrollBehavior(to, from, savedPosition) {
     return { top: 0, behavior: "smooth" };

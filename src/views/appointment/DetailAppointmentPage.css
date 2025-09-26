@@ -1,0 +1,26 @@
+.section-title {
+    display: flex;
+    flex: 1;
+    padding: 6px 12px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #6f32c9, #c250c9);
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.section-content {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+}
+
+.section-content ul,
+.section-content ol {
+    margin-left: 20px;
+    padding-left: 20px;
+}
+
+.section-content li {
+    margin-bottom: 6px;
+}
