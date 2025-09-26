@@ -30,6 +30,7 @@
 </template>
 
 <script setup>
+import { Modal } from "ant-design-vue";
 import axios from "axios";
 import { onMounted, ref } from "vue";
 
