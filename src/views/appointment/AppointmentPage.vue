@@ -12,7 +12,7 @@
         <div>
           <router-link
             :to="`/detail-appointment/${item.id}`"
-            class="cursor-pointer hover:bg-transparent  hover:font-bold"
+            class="cursor-pointer hover:bg-transparent hover:font-bold"
           >
             {{ item.name }}
           </router-link>
@@ -37,6 +37,11 @@ import { onMounted, ref } from "vue";
 const data = ref([]);
 
 const fetchData = async () => {
+  const modalWait = Modal.info({
+    title: "Đang tải thông tin bác sĩ.",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/getAllDoctor`
@@ -49,7 +54,13 @@ const fetchData = async () => {
         content: `${response.data.message}`,
       });
     }
+    modalWait.destroy();
   } catch (e) {
+    modalWait.destroy();
+    Modal.error({
+      title: "Xảy ra lỗi khi lấy thông tin các bác sĩ",
+      content: `${response.data.message}`,
+    });
     console.log("error: ", e);
   }
 };

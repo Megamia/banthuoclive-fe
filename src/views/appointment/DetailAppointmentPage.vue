@@ -235,12 +235,13 @@ const handleCreateAppointment = async () => {
       }
     );
     modalWait.destroy();
+
     if (response.data.status === 1) {
       const dataAppointment = response.data.data;
       Modal.success({
         title: "Đặt lịch thành công!",
         content: `Bạn đã đặt lịch với bác sĩ ${doctors.value.name} 
-      vào lúc ${selectedTime.value}, ${selectedDate.value.weekdayLabel} ngày ${selectedDate.value.date} với số thứ tự khám là ${dataAppointment.queue_number}`,
+      vào lúc ${selectedTime.value}, ${selectedDate.value.weekdayLabel} ngày ${selectedDate.value.date} với số thứ tự khám là ${dataAppointment?.queue_number}`,
       });
     } else if (response.data.status === 0)
       Modal.error({
@@ -248,7 +249,19 @@ const handleCreateAppointment = async () => {
         content: `${response.data.message}`,
       });
   } catch (e) {
-    console.log("Error: ", e);
+    modalWait.destroy();
+
+    if (e.response) {
+      Modal.error({
+        title: "Đặt lịch thất bại!",
+        content: e.response.data.message || "Có lỗi xảy ra!",
+      });
+    } else {
+      Modal.error({
+        title: "Đặt lịch thất bại!",
+        content: "Không thể kết nối đến server!",
+      });
+    }
   }
 };
 const onPanelChange = (value) => {};
@@ -263,6 +276,11 @@ const handleChangeDay = (value) => {
 };
 
 const fetchDataDoctors = async () => {
+  const modalWait = Modal.info({
+    title: "Đang tải thông tin bác sĩ.",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const response = await axios.get(
       `${
@@ -279,7 +297,13 @@ const fetchDataDoctors = async () => {
         content: `${response.data.message}`,
       });
     }
+    modalWait.destroy();
   } catch (e) {
+    modalWait.destroy();
+    Modal.error({
+      title: "Xảy ra lỗi khi lấy thông tin các bác sĩ",
+      content: `${response.data.message}`,
+    });
     console.log("Error: ", e);
   }
 };

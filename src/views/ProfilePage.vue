@@ -44,6 +44,18 @@
               : 'bg-white font-semibold'
           "
         >
+          Lịch khám của bạn
+        </button>
+        <button
+          href="#"
+          class="flex items-center px-3 py-2.5 hover:text-indigo-900 rounded-full"
+          @click="handleChangeActivePage(3)"
+          :class="
+            activePage == 3
+              ? 'bg-slate-200 text-indigo-900 font-bold'
+              : 'bg-white font-semibold'
+          "
+        >
           Đơn hàng của bạn
         </button>
       </div>
@@ -250,7 +262,7 @@
             </form>
           </div>
         </div>
-        <!-- Doi mat khau -->
+
         <div
           v-if="activePage == 1"
           class="w-full px-6 pb-8 md:mt-4 sm:max-w-xl sm:rounded-lg"
@@ -380,6 +392,12 @@
         </div>
         <div
           v-if="activePage == 2"
+          class="w-full px-6 pb-8 md:mt-4 sm:rounded-lg"
+        >
+          <TableAppointmentComponent />
+        </div>
+        <div
+          v-if="activePage == 3"
           class="w-full px-6 pb-8 md:mt-4 sm:max-w-xl sm:rounded-lg"
         >
           <a-flex vertical>
@@ -581,6 +599,7 @@ import { useRouter } from "vue-router";
 import { CdEye, CdEyeClosed } from "@kalimahapps/vue-icons";
 import axios from "axios";
 import { Modal } from "ant-design-vue";
+import TableAppointmentComponent from "@/components/appointment/TableAppointmentComponent.vue";
 const router = useRouter();
 
 const provinces = ref([]);
@@ -989,7 +1008,9 @@ const fetchProfile = async (storedUser) => {
     profile.value.subdistrict = null;
   }
 
-  getAllDataOrder(user.id);
+  if (activePage.value == 3) {
+    await getAllDataOrder(user.id);
+  }
 };
 
 const handleChangeInfo = async () => {

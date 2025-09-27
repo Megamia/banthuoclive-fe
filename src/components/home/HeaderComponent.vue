@@ -53,7 +53,7 @@
           :key="index"
           class="flex flex-row items-center gap-1 font-semibold hover:text-white text-nowrap basis-1/7"
         >
-          <a
+          <!-- <a
             class="ant-dropdown-link hover:bg-[#007BFF] capitalize"
             :href="
               item.products?.length
@@ -63,7 +63,20 @@
           >
             {{ item.category.name }}
             <AnFilledCaretDown v-if="item.products.length >= 1" />
-          </a>
+          </a> -->
+          <router-link
+            class="ant-dropdown-link hover:bg-[#007BFF] capitalize"
+            :to="
+              item.category?.slug
+                ? item.products?.length
+                  ? `/category/${item.category.slug}`
+                  : `/${item.category.slug}`
+                : '/'
+            "
+          >
+            {{ item.category?.name || "Danh mục" }}
+            <AnFilledCaretDown v-if="item.products?.length >= 1" />
+          </router-link>
 
           <template #overlay>
             <a-menu v-if="item.products.length >= 1">

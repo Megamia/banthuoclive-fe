@@ -137,7 +137,6 @@ const fetchDataSldie = async (slug) => {
     );
     if (response.data) {
       dataSlide.value = response.data.products;
-      console.log("dataSlide.value: ", dataSlide.value);
 
       haveData.value = true;
     } else {
