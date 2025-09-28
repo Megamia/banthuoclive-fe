@@ -483,10 +483,11 @@
                 >
               </a-flex>
             </a-flex>
-            <a-flex vertical v-else-if="!dataGHN && isFind">
-              <span>Bạn chưa có đơn hàng</span>
-            </a-flex>
-            <a-flex v-if="!isFind" vertical class="gap-[10px]">
+            <a-flex
+              v-else-if="dataOrder && !isFind"
+              vertical
+              class="gap-[10px]"
+            >
               <a-flex
                 v-for="(dataOrderItem, index) in dataOrder"
                 :key="dataOrderItem.id"
@@ -578,6 +579,9 @@
                 </a-flex>
               </a-flex>
             </a-flex>
+            <a-flex vertical v-else>
+              <span>Bạn chưa có đơn hàng</span>
+            </a-flex>
           </a-flex>
         </div>
       </div>
@@ -661,27 +665,37 @@ const handleFindOrder = () => {
   isFind.value = true;
 };
 
-const handleReceived = async (index, order_code, id) => {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const handleReceived = async (index, order_code) => {
   Modal.confirm({
     title: "Hành động này sẽ không thể hoàn tác!!",
     content: "Bạn có chắc chắn muốn xác nhận đã nhận đơn hàng?",
     async onOk() {
       try {
         const response = await axios.post(
-          `${import.meta.env.VITE_APP_URL_API_ORDER}/updateStatus/${order_code}`
+          `${
+            import.meta.env.VITE_APP_URL_API_ORDER
+          }/updateStatusOrder/${order_code}`
         );
 
-        isReceived.value[index] = true;
-        dataOrder.value[index].status_id = 2;
+        if (response.data.status === 1) {
+          isReceived.value[index] = true;
+          dataOrder.value[index].status_id = 2;
 
-        Modal.success({
-          title: "Xác nhận thành công!",
-          content: "Đơn hàng đã được cập nhật là 'đã nhận'.",
-        });
+          Modal.success({
+            title: "Xác nhận thành công!",
+            content: response.data.message,
+          });
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+          await sleep(1000);
+        } else {
+          Modal.error({
+            title: "Xác nhận thất bại!",
+            content: response.data.message || "Có lỗi xảy ra.",
+          });
+        }
       } catch (error) {
-        // console.error("Lỗi khi cập nhật trạng thái:", error);
         Modal.error({
           title: "Xác nhận thất bại!",
           content: "Đã xảy ra lỗi khi gửi yêu cầu tới server.",
@@ -767,10 +781,11 @@ const formatShippingStatus = (value) => {
 const getDataOrder = async (order_code) => {
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_ORDER}/order/${order_code}`
+      `${import.meta.env.VITE_APP_URL_API_ORDER}/getDataOrder/${order_code}`
     );
-    if (response.status === 200) {
-      const data = response.data.property;
+
+    if (response.data.status === 1) {
+      const data = response.data.dataOrder.property;
 
       const provinceName = await fetchProvinceNameById(data.province);
 
@@ -807,11 +822,12 @@ const getAllDataOrder = async (id) => {
   });
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_ORDER}/allDataOrder/${id}`
+      `${import.meta.env.VITE_APP_URL_API_ORDER}/getAllDataOrder/${id}`
     );
+
     modalWait.destroy();
-    if (response.status === 200) {
-      dataOrder.value = response.data;
+    if (response.data.status === 1) {
+      dataOrder.value = response.data.allDataOrder;
       isReceived.value = dataOrder.value.map((order) => order.status_id === 2);
 
       await loadNamesForOrders();
@@ -931,6 +947,8 @@ const fetchProvinces = async () => {
 const onProvinceChange = async (provinceCode) => {
   if (!provinceCode || isUpdatingProvince) return;
   isUpdatingProvince = true;
+  districts.value = null;
+  profile.value.district = null;
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceCode}`
@@ -959,7 +977,8 @@ const onProvinceChange = async (provinceCode) => {
 
 const onDistrictChange = async (districtCode) => {
   if (!districtCode || isUpdatingDistrict) return;
-
+  wards.value = null;
+  profile.value.subdistrict = null;
   isUpdatingDistrict = true;
   try {
     const response = await axios.get(
@@ -1015,11 +1034,6 @@ const fetchProfile = async (storedUser) => {
   } else {
     profile.value.subdistrict = null;
   }
-  console.log("user: ", profile.value);
-  console.log("wardCode: ", wardCode);
-  console.log("wards.value: ", wards.value);
-  const a = wards.value.some((w) => String(w.WardCode) === wardCode);
-  console.log("a: ", a);
 
   if (activePage.value == 3) {
     await getAllDataOrder(user.id);
@@ -1028,6 +1042,11 @@ const fetchProfile = async (storedUser) => {
 
 const handleChangeInfo = async () => {
   if (!validatePhoneValue(profile.value.phone)) return;
+  const modalWait = Modal.info({
+    title: "Đang xử lý yêu cầu của bạn...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const token = localStorage.getItem("token");
 
@@ -1048,6 +1067,7 @@ const handleChangeInfo = async () => {
       }
     );
 
+    modalWait.destroy();
     if (response.data.status === 1) {
       Modal.success({
         title: `${response.data.message}`,
@@ -1065,6 +1085,7 @@ const handleChangeInfo = async () => {
       router.push("/login");
     }
   } catch (error) {
+    modalWait.destroy();
     console.log("error: ", error);
     // if (error.response && error.response.status === 401) {
     //   Modal.error({

@@ -483,7 +483,6 @@ const checkUser = () => {
     LocateState.subdistrict = user?.subdistrict;
     formState.address = user?.address;
   }
-  console.log("LocateState: ", LocateState);
 };
 
 const provinces = ref([]);
@@ -862,24 +861,33 @@ const onSubmit = async () => {
         modalWait.destroy();
         store.dispatch("product/clearDataStoreCart");
         let secondsToGo = 5;
+
+        let interval;
+        let timeout;
+        let redirected = false; 
+        const goToOrderPage = () => {
+          if (redirected) return; 
+          redirected = true;
+          clearInterval(interval);
+          clearTimeout(timeout);
+          modalSuccess.destroy();
+          router.push(`/payment/order-received/${response.data.order_code}`);
+        };
+
         const modalSuccess = Modal.success({
           title: "Tạo đơn hàng thành công!",
           content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
-          onOk() {
-            router.push(`/payment/order-received/${response.data.order_code}`);
-          },
+          onOk: goToOrderPage, 
         });
-        const interval = setInterval(() => {
+
+        interval = setInterval(() => {
           secondsToGo -= 1;
           modalSuccess.update({
             content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
           });
         }, 1000);
-        setTimeout(() => {
-          clearInterval(interval);
-          modalSuccess.destroy();
-          router.push(`/payment/order-received/${response.data.order_code}`);
-        }, secondsToGo * 1000);
+
+        timeout = setTimeout(goToOrderPage, secondsToGo * 1000); 
       }
     } catch (apiError) {
       console.error("API error:", apiError);
@@ -910,9 +918,6 @@ const handlePaymentSuccess = async (orderID) => {
       `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
       payload
     );
-    console.log("payload: ", payload);
-
-    console.log("paypal: ", response);
 
     modal.destroy();
     store.dispatch("product/clearDataStoreCart");
