@@ -1016,6 +1016,10 @@ const fetchProfile = async (storedUser) => {
     profile.value.subdistrict = null;
   }
   console.log("user: ", profile.value);
+  console.log("wardCode: ", wardCode);
+  console.log("wards.value: ", wards.value);
+  const a = wards.value.some((w) => String(w.WardCode) === wardCode);
+  console.log("a: ", a);
 
   if (activePage.value == 3) {
     await getAllDataOrder(user.id);
