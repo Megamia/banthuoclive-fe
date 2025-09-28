@@ -858,7 +858,9 @@ const fetchSubdistrictNameById = (id) => {
 const getDistrictsByProvinceId = async (provinceId) => {
   if (!provinceId) return [];
   try {
-    const response = await axios.get(`${host}/ghn/districts/${provinceId}`);
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceId}`
+    );
     return response.data.data || [];
   } catch (e) {
     console.error("Failed to fetch districts:", e);
@@ -869,7 +871,9 @@ const getDistrictsByProvinceId = async (provinceId) => {
 const getWardsByDistrictId = async (districtId) => {
   if (!districtId) return [];
   try {
-    const response = await axios.get(`${host}/ghn/wards/${districtId}`);
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtId}`
+    );
     return response.data.data || [];
   } catch (e) {
     console.error("Failed to fetch wards:", e);
@@ -911,11 +915,11 @@ const handleChangeActivePage = (value) => {
   activePage.value = value;
 };
 
-const host = import.meta.env.VITE_APP_URL_API_GHN;
-
 const fetchProvinces = async () => {
   try {
-    const response = await axios.get(`${host}/ghn/provinces`);
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/provinces`
+    );
     if (response.data.status === 1) {
       provinces.value = response.data.data || [];
     }
@@ -928,7 +932,9 @@ const onProvinceChange = async (provinceCode) => {
   if (!provinceCode || isUpdatingProvince) return;
   isUpdatingProvince = true;
   try {
-    const response = await axios.get(`${host}/ghn/districts/${provinceCode}`);
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceCode}`
+    );
     if (response.data.status === 1) {
       districts.value = response.data.data || [];
     }
@@ -956,7 +962,9 @@ const onDistrictChange = async (districtCode) => {
 
   isUpdatingDistrict = true;
   try {
-    const response = await axios.get(`${host}/ghn/wards/${districtCode}`);
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtCode}`
+    );
     if (response.data.status === 1) {
       wards.value = response.data.data || [];
     }
@@ -1007,6 +1015,7 @@ const fetchProfile = async (storedUser) => {
   } else {
     profile.value.subdistrict = null;
   }
+  console.log("user: ", profile.value);
 
   if (activePage.value == 3) {
     await getAllDataOrder(user.id);
