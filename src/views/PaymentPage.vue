@@ -483,6 +483,7 @@ const checkUser = () => {
     LocateState.subdistrict = user?.subdistrict;
     formState.address = user?.address;
   }
+  console.log("LocateState: ", LocateState);
 };
 
 const provinces = ref([]);
@@ -821,7 +822,7 @@ const onSubmit = async () => {
   }
 
   formState.subdistrict = formState.subdistrict
-    ? Number(formState.subdistrict)
+    ? String(formState.subdistrict)
     : null;
   formState.district = formState.district ? Number(formState.district) : null;
   formState.province = formState.province ? Number(formState.province) : null;
