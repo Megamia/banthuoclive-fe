@@ -903,6 +903,8 @@ const handlePaymentSuccess = async (orderID) => {
       `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
       payload
     );
+    console.log("payload: ", payload);
+
     console.log("paypal: ", response);
 
     modal.destroy();

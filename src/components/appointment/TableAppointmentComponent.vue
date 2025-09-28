@@ -101,10 +101,14 @@ const fetchDataAppointment = async () => {
         import.meta.env.VITE_APP_URL_API_APPOINTMENT
       }/getDataAppointmentByUserid/${user.id}`
     );
-    console.log(response);
-
-    dataSource.value = response.data.data || [];
-    console.log("res: ", dataSource.value);
+    if (response.data.status === 1 && response.data?.data) {
+      dataSource.value = response.data.data || [];
+    } else {
+      Modal.error({
+        title: "Lấy thông tin thất bại!",
+        content: `${response.data.message}`,
+      });
+    }
   } catch (e) {
     console.error("Error: ", e);
   } finally {
