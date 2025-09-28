@@ -528,11 +528,11 @@ const radioStyle = reactive({
   lineHeight: "30px",
 });
 
-const host = import.meta.env.VITE_APP_URL_API_GHN;
-
 const fetchProvinces = async () => {
   try {
-    const response = await axios.get(`${host}/ghn/provinces`);
+    const response = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/provinces`
+    );
     if (response.data.status === 1) {
       provinces.value = response.data.data;
       diffprovinces.value = response.data.data;
@@ -548,7 +548,9 @@ const onProvinceChange = async () => {
 
   try {
     if (provinceCode) {
-      const response = await axios.get(`${host}/ghn/districts/${provinceCode}`);
+      const response = await axios.get(
+        `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceCode}`
+      );
       if (response.data.status === 1) {
         districts.value = response.data.data || [];
       }
@@ -564,7 +566,9 @@ const onProvinceChange = async () => {
 
     if (diffprovinceCode) {
       const response = await axios.get(
-        `${host}/ghn/districts/${diffprovinceCode}`,
+        `${
+          import.meta.env.VITE_APP_URL_API_GHN
+        }/ghn/districts/${diffprovinceCode}`,
         {
           headers: { Token: token },
         }
@@ -592,7 +596,9 @@ const onDistrictChange = async () => {
 
   try {
     if (districtCode) {
-      const response = await axios.get(`${host}/ghn/wards/${districtCode}`);
+      const response = await axios.get(
+        `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtCode}`
+      );
       if (response.data.status === 1) {
         wards.value = response.data.data || [];
       }
@@ -608,7 +614,7 @@ const onDistrictChange = async () => {
 
     if (diffdistrictCode) {
       const response = await axios.get(
-        `${host}/ghn/wards/${diffdistrictCode}`,
+        `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${diffdistrictCode}`,
         {
           headers: { Token: token },
         }
