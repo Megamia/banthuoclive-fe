@@ -14,7 +14,10 @@
           {{ record?.queue_number || "null" }}
         </template>
         <template v-else-if="column.dataIndex === 'doctor_name'">
-          <router-link :to="`/detail-appointment/${record?.doctor_id}`" class="hover:bg-transparent">
+          <router-link
+            :to="`/detail-appointment/${record?.doctor_id}`"
+            class="hover:bg-transparent"
+          >
             {{ record?.doctor_name || "null" }}
           </router-link>
         </template>
@@ -98,6 +101,8 @@ const fetchDataAppointment = async () => {
         import.meta.env.VITE_APP_URL_API_APPOINTMENT
       }/getDataAppointmentByUserid/${user.id}`
     );
+    console.log(response);
+
     dataSource.value = response.data.data || [];
     console.log("res: ", dataSource.value);
   } catch (e) {

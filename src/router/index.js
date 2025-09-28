@@ -148,10 +148,6 @@ router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem("token");
 
   const redirectToLogin = () => {
-    Modal.error({
-      title: "Xác thực thông tin thất bại",
-      content: "Vui lòng đăng nhập lại để sử dụng dịch vụ!",
-    });
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     return next({ name: "login", query: { redirect: to.fullPath } });
@@ -162,9 +158,13 @@ router.beforeEach(async (to, from, next) => {
 
     let cachedUser = localStorage.getItem("user");
     if (cachedUser) {
-      cachedUser = JSON.parse(cachedUser);
-      window.dispatchEvent(new Event("user-logged-in"));
-      return next();
+      try {
+        cachedUser = JSON.parse(cachedUser);
+        window.dispatchEvent(new Event("user-logged-in"));
+        return next();
+      } catch {
+        localStorage.removeItem("user");
+      }
     }
 
     const response = await axios.get(
@@ -172,7 +172,7 @@ router.beforeEach(async (to, from, next) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    if (response.data.status === 1 && response.data.user) {
+    if (response.data?.status === 1 && response.data?.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
       window.dispatchEvent(new Event("user-logged-in"));
       return next();
@@ -184,6 +184,5 @@ router.beforeEach(async (to, from, next) => {
     return redirectToLogin();
   }
 });
-
 
 export default router;
