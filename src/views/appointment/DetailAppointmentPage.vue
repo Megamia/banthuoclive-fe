@@ -60,7 +60,7 @@
       </a-flex>
     </a-flex>
     <a-flex vertical class="">
-      <a-flex class="gap-[30px]">
+      <a-flex class="gap-[50px]">
         <div
           :style="{
             width: '300px',
@@ -75,7 +75,7 @@
             @change="handleChangeDay"
           />
         </div>
-        <div>
+        <a-flex vertical class="gap-[20px]">
           <div class="mt-4">
             <label class="block text-sm text-gray-600 mb-1">
               Chọn giờ (30 phút)
@@ -99,12 +99,19 @@
               </button>
             </div>
           </div>
-        </div>
+          <a-flex class="flex-1 justify-center items-center">
+            <a-button
+              @click="handleCreateAppointment"
+              :disabled="!selectedTime || selectedTime == null"
+              size="large"
+              type="primary"
+            >
+              Đặt lịch
+            </a-button>
+          </a-flex>
+        </a-flex>
       </a-flex>
     </a-flex>
-    <div>
-      <button @click="handleCreateAppointment">Đặt lịch</button>
-    </div>
   </a-flex>
 </template>
 
