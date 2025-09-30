@@ -1,62 +1,89 @@
 <template>
   <a-flex vertical class="gap-[30px] mt-[30px]">
-    <a-flex class="gap-[100px] max-md:block">
+    <a-flex class="gap-[200px] max-md:flex-col max-md:gap-5">
       <a-flex vertical class="gap-[10px] min-w-[200px] items-center">
         <a-image
           :width="200"
           :src="
             doctors?.image?.cloudinary_url ||
             doctors?.image?.path ||
-            `https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty-300x240.jpg`
+            'https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty-300x240.jpg'
           "
         />
-        <span class="items-center justify-center whitespace-nowrap gap-[5px] text-[20px]">
+        <span
+          class="flex items-center justify-center whitespace-nowrap gap-[5px] text-[20px]"
+        >
           BS:
-          <span class="capitalize font-bold ">
-            {{ doctors?.name }}
-          </span>
+          <span class="capitalize font-bold">{{ doctors?.name }}</span>
         </span>
-        <span class="items-center justify-center whitespace-nowrap gap-[5px] text-[20px]">
+        <span
+          class="flex items-center justify-center whitespace-nowrap gap-[5px] text-[20px]"
+        >
           Kinh nghiệm:
-          <span class="capitalize font-bold"> {{ experienceYears }} năm </span>
+          <span class="capitalize font-bold">{{ experienceYears }} năm</span>
         </span>
       </a-flex>
-      <a-flex vertical class="gap-[30px]">
-        <a-flex vertical class="gap-[10px]">
+
+      <a-flex vertical class="gap-[30px] max-w-[600px]">
+        <section class="section flex flex-col gap-2">
           <div class="section-title">Giới thiệu:</div>
-          <div class="section-content">
-            <div
-              v-if="doctors?.short_description"
-              v-html="doctors?.short_description"
-              class="capitalize line-clamp-3 xl:line-clamp-none"
-            ></div>
-            <div v-else class="text-gray-400 italic">No data</div>
-          </div>
-        </a-flex>
+          <div
+            v-if="doctors?.short_description"
+            :class="[
+              'capitalize transition-all duration-300',
+              expandedShort ? '' : 'line-clamp-3',
+            ]"
+            v-html="doctors?.short_description"
+          ></div>
+          <button
+            v-if="doctors?.short_description"
+            @click="expandedShort = !expandedShort"
+            class="mt-1 text-blue-600 hover:underline text-sm"
+          >
+            {{ expandedShort ? "Thu gọn" : "Xem thêm" }}
+          </button>
+          <div v-else class="text-gray-400 italic">No data</div>
+        </section>
 
-        <a-flex vertical class="gap-[10px]">
+        <section class="section flex flex-col gap-2">
           <div class="section-title">Sở trường chuyên môn:</div>
-          <div class="section-content">
-            <div
-              v-if="doctors?.specialty_description"
-              v-html="doctors?.specialty_description"
-              class="capitalize"
-            ></div>
-            <div v-else class="text-gray-400 italic">No data</div>
-          </div>
-        </a-flex>
+          <div
+            v-if="doctors?.specialty_description"
+            :class="[
+              'capitalize transition-all duration-300',
+              expandedSpecialty ? '' : 'line-clamp-3',
+            ]"
+            v-html="doctors?.specialty_description"
+          ></div>
+          <button
+            v-if="doctors?.specialty_description"
+            @click="expandedSpecialty = !expandedSpecialty"
+            class="mt-1 text-blue-600 hover:underline text-sm"
+          >
+            {{ expandedSpecialty ? "Thu gọn" : "Xem thêm" }}
+          </button>
+          <div v-else class="text-gray-400 italic">No data</div>
+        </section>
 
-        <a-flex vertical class="gap-[10px]">
+        <section class="section flex flex-col gap-2">
           <div class="section-title">Quá trình công tác:</div>
-          <div class="section-content">
-            <div
-              v-if="doctors?.work_process"
-              v-html="doctors?.work_process"
-              class="capitalize"
-            ></div>
-            <div v-else class="text-gray-400 italic">No data</div>
-          </div>
-        </a-flex>
+          <div
+            v-if="doctors?.work_process"
+            :class="[
+              'capitalize transition-all duration-300',
+              expandedWork ? '' : 'line-clamp-3',
+            ]"
+            v-html="doctors?.work_process"
+          ></div>
+          <button
+            v-if="doctors?.work_process"
+            @click="expandedWork = !expandedWork"
+            class="mt-1 text-blue-600 hover:underline text-sm"
+          >
+            {{ expandedWork ? "Thu gọn" : "Xem thêm" }}
+          </button>
+          <div v-else class="text-gray-400 italic">No data</div>
+        </section>
       </a-flex>
     </a-flex>
     <a-flex vertical class=" ">
@@ -131,8 +158,11 @@ const route = useRoute();
 const id = route.params.id;
 const doctors = ref(null);
 const schedules = ref([]);
-
 const selectedTime = ref(null);
+
+const expandedShort = ref(false);
+const expandedSpecialty = ref(false);
+const expandedWork = ref(false);
 
 const value1 = ref(dayjs());
 const selectedDate = ref({
@@ -292,7 +322,7 @@ const fetchDataDoctors = async () => {
     const response = await axios.get(
       `${
         import.meta.env.VITE_APP_URL_API_APPOINTMENT
-      }/getAllDataDoctorById/${id}`
+      }/getDataAllDoctorById/${id}`
     );
     if (response.data.status === 1) {
       doctors.value = response.data.data;
