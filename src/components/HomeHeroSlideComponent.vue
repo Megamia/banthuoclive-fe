@@ -4,7 +4,7 @@
       clickable: true,
     }"
     :modules="modules"
-    class="mySlide max-w-[100%]"
+    class="mySlide max-w-[100%] md:h-[550px] mt-[10px]"
   >
     <swiper-slide>
       <img
@@ -57,6 +57,11 @@ const modules = [Pagination];
   transform: translateX(-50%);
   z-index: 2;
 }
+@media (max-width: 768px) {
+  .mySlide::v-deep(.swiper-pagination) {
+      margin-bottom: -10px;
+  }
+}
 .mySlide::v-deep(.swiper-pagination-bullet) {
   background-color: #706a6a;
   opacity: 1;
@@ -71,5 +76,11 @@ const modules = [Pagination];
   cursor: pointer;
   width: 100%;
   height: 550px;
+  object-fit: cover;
+}
+@media (max-width: 768px) {
+  .mySlide img  {
+      max-height: 215px;
+  }
 }
 </style>

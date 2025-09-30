@@ -15,14 +15,14 @@
     <div
       class="fixed top-[70%] right-[2%] bg-[red] z-[90] p-2 rounded-lg border-[1px] border-gray-600"
     >
-      <button class="text-[30px] text-white" @click="hanldeOpenChatBot">
+      <button class="text-[30px] text-white max-md:text-[20px]" @click="hanldeOpenChatBot">
         ChatBot
       </button>
     </div>
     <div
       class="fixed top-[85%] right-[2%] bg-[#2268DE] z-[90] p-2 rounded-lg border-[1px] border-gray-600"
     >
-      <button class="text-[30px] text-white" @click="hanldeHiddenHeader">
+      <button class="text-[30px] text-white max-md:text-[20px]" @click="hanldeHiddenHeader">
         {{ isHidden ? "Hiện header" : "Ẩn header" }}
       </button>
     </div>

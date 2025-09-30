@@ -1,7 +1,7 @@
 <template>
   <a-flex vertical class="gap-[30px] mt-[30px]">
-    <a-flex class="gap-[100px]">
-      <a-flex vertical class="gap-[10px] min-w-[300px] items-center">
+    <a-flex class="gap-[100px] max-md:block">
+      <a-flex vertical class="gap-[10px] min-w-[200px] items-center">
         <a-image
           :width="200"
           :src="
@@ -10,13 +10,13 @@
             `https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty-300x240.jpg`
           "
         />
-        <span class="items-center justify-center gap-[5px] text-[20px]">
-          Tên bác sĩ:
-          <span class="capitalize font-bold">
+        <span class="items-center justify-center whitespace-nowrap gap-[5px] text-[20px]">
+          BS:
+          <span class="capitalize font-bold ">
             {{ doctors?.name }}
           </span>
         </span>
-        <span class="items-center justify-center gap-[5px] text-[20px]">
+        <span class="items-center justify-center whitespace-nowrap gap-[5px] text-[20px]">
           Kinh nghiệm:
           <span class="capitalize font-bold"> {{ experienceYears }} năm </span>
         </span>
@@ -28,7 +28,7 @@
             <div
               v-if="doctors?.short_description"
               v-html="doctors?.short_description"
-              class="capitalize"
+              class="capitalize line-clamp-3 xl:line-clamp-none"
             ></div>
             <div v-else class="text-gray-400 italic">No data</div>
           </div>
@@ -59,8 +59,8 @@
         </a-flex>
       </a-flex>
     </a-flex>
-    <a-flex vertical class="">
-      <a-flex class="gap-[50px]">
+    <a-flex vertical class=" ">
+      <a-flex class="gap-[50px] max-md:block">
         <div
           :style="{
             width: '300px',

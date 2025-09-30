@@ -39,7 +39,7 @@
         <!-- Cần UPDATE -->
       </a-flex>
     </a-flex>
-    <a-flex class="flex-1 py-[35px] gap-6">
+    <a-flex class="flex-1 py-[35px] gap-6 max-md:px-2">
       <a-flex class="flex-1">
         <a-flex vertical gap="16">
           <h5 class="text-[16px] font-[600]">CÔNG TY TNHH LIVE</h5>
@@ -69,7 +69,7 @@
         v-for="item in dataFooter"
         :key="item.id"
         vertical
-        class="flex-3 justify-between"
+        class="flex-3 justify-between max-md:hidden"
       >
         <a-flex vertical gap="16">
           <h5 class="text-[16px] font-[600]">{{ item.topic }}</h5>
@@ -89,7 +89,7 @@
           </a-flex>
         </a-flex>
       </a-flex>
-      <a-flex class="w-[45%]" vertical>
+      <a-flex class="w-[45%] max-md:hidden" vertical>
         <a-flex vertical gap="16">
           <h5 class="text-[16px] font-[600]">Hỗ trợ thanh toán</h5>
           <a-flex class="flex gap-[10px]" vertical>
