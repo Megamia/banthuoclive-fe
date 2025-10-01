@@ -173,12 +173,12 @@ const fetchData = async () => {
   try {
     const order_code = route.params.slug;
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_ORDER}/order/${order_code}`
+      `${import.meta.env.VITE_APP_URL_API_ORDER}/getDataOrder/${order_code}`
     );
-    if (response.data) {
+    if (response.data.status === 1) {
       IsorderCode.value = true;
-      OrderData.value = response.data;
-      data.value = response.data.orderdetail;
+      OrderData.value = response.data.dataOrder;
+      data.value = response.data.dataOrder.orderdetail;
     }
   } catch (error) {
     console.error("Error fetching order:", error);

@@ -831,6 +831,8 @@ const getAllDataOrder = async (id) => {
       isReceived.value = dataOrder.value.map((order) => order.status_id === 2);
 
       await loadNamesForOrders();
+    } else {
+      dataOrder.value = null;
     }
 
     async function loadNamesForOrders() {
@@ -866,10 +868,10 @@ const fetchProvinceNameById = (id) => {
   return province ? province.ProvinceName : "";
 };
 
-const fetchSubdistrictNameById = (id) => {
-  const ward = wards.value.find((w) => String(w.WardCode) === String(id));
-  return ward ? ward.WardName : "";
-};
+// const fetchSubdistrictNameById = (id) => {
+//   const ward = wards.value.find((w) => String(w.WardCode) === String(id));
+//   return ward ? ward.WardName : "";
+// };
 
 const getDistrictsByProvinceId = async (provinceId) => {
   if (!provinceId) return [];
@@ -927,8 +929,12 @@ const handleEditInfo = () => {
   editMode.value = !editMode.value;
 };
 
-const handleChangeActivePage = (value) => {
+const handleChangeActivePage = async (value) => {
   activePage.value = value;
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (activePage.value == 3) {
+    await getAllDataOrder(user.id);
+  }
 };
 
 const fetchProvinces = async () => {
@@ -1033,10 +1039,6 @@ const fetchProfile = async (storedUser) => {
     profile.value.subdistrict = wardCode;
   } else {
     profile.value.subdistrict = null;
-  }
-
-  if (activePage.value == 3) {
-    await getAllDataOrder(user.id);
   }
 };
 
