@@ -371,15 +371,21 @@
                 <a-button
                   type="primary"
                   @click="onSubmit"
-                  v-if="!PayPalButtonRef"
+                  v-if="!BankBtnRef"
                   :disabled="!formState.terms"
                   >Đặt hàng</a-button
                 >
                 <PayPalButton
-                  v-if="PayPalButtonRef"
+                  v-if="BankBtnRef"
                   :amount="totals.subtotal"
                   :form-state="formState"
                   @payment-success="handlePaymentSuccess"
+                />
+
+                <ZaloPayButton
+                  v-if="BankBtnRef"
+                  :amount="totals.subtotal"
+                  :form-state="formState"
                 />
               </a-flex>
             </a-flex>
@@ -397,12 +403,15 @@ import axios from "axios";
 import { AkXSmall } from "@kalimahapps/vue-icons";
 import store from "@/store/store";
 import PayPalButton from "@/components/paypal/PayPalButton.vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { getDataFromIndexedDB } from "@/store/indexedDB";
 import { Modal } from "ant-design-vue";
+// import MomoButton from "@/components/momo/MomoButton.vue";
+import ZaloPayButton from "@/components/zalo/ZaloPayButton.vue";
 
+const route = useRoute();
 const router = useRouter();
-const PayPalButtonRef = ref(false);
+const BankBtnRef = ref(false);
 
 const dataTable = ref([]);
 
@@ -439,7 +448,7 @@ const LocateState = reactive({
 });
 
 const test = () => {
-  PayPalButtonRef.value = false;
+  BankBtnRef.value = false;
 };
 
 const fetchDataTable = async () => {
@@ -819,6 +828,13 @@ const onSubmit = async () => {
   if (!formState.subdistrict) {
     handleSubdistrictChange(LocateState.subdistrict);
   }
+  if (formState.items.length <= 0) {
+    Modal.error({
+      title: "Tạo đơn hàng thất bại!",
+      content: "Không có sản phẩm trong giỏ hàng",
+    });
+    return;
+  }
 
   formState.subdistrict = formState.subdistrict
     ? String(formState.subdistrict)
@@ -838,7 +854,7 @@ const onSubmit = async () => {
   }
 
   if (formState.paymenttype === 1) {
-    PayPalButtonRef.value = true;
+    BankBtnRef.value = true;
     return;
   }
 
@@ -850,7 +866,7 @@ const onSubmit = async () => {
     });
 
     try {
-      PayPalButtonRef.value = false;
+      BankBtnRef.value = false;
 
       const response = await axios.post(
         `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
@@ -864,9 +880,9 @@ const onSubmit = async () => {
 
         let interval;
         let timeout;
-        let redirected = false; 
+        let redirected = false;
         const goToOrderPage = () => {
-          if (redirected) return; 
+          if (redirected) return;
           redirected = true;
           clearInterval(interval);
           clearTimeout(timeout);
@@ -877,7 +893,7 @@ const onSubmit = async () => {
         const modalSuccess = Modal.success({
           title: "Tạo đơn hàng thành công!",
           content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
-          onOk: goToOrderPage, 
+          onOk: goToOrderPage,
         });
 
         interval = setInterval(() => {
@@ -887,7 +903,7 @@ const onSubmit = async () => {
           });
         }, 1000);
 
-        timeout = setTimeout(goToOrderPage, secondsToGo * 1000); 
+        timeout = setTimeout(goToOrderPage, secondsToGo * 1000);
       }
     } catch (apiError) {
       console.error("API error:", apiError);
@@ -902,17 +918,31 @@ const onSubmit = async () => {
 };
 //CẦN UPDATE
 
-const handlePaymentSuccess = async (orderID) => {
+const handlePaymentSuccess = async ({ provider, data }) => {
+  const userStr = localStorage.getItem("user");
+
+  if (userStr) {
+    const u = JSON.parse(userStr);
+
+    formState.province = u.province;
+    formState.district = u.district;
+    formState.subdistrict = u.subdistrict;
+  }
+
   const modal = Modal.info({
     title: "Đang xử lý đơn hàng của bạn...",
     content: "Vui lòng chờ trong giây lát",
     okButtonProps: { disabled: true },
   });
+
   try {
-    const payload = {
-      ...JSON.parse(JSON.stringify(formState)),
-      paypal_order_id: orderID,
-    };
+    let payload = { ...JSON.parse(JSON.stringify(formState)) };
+
+    if (provider === "paypal") {
+      payload.paypal_order_id = data.orderID;
+    } else if (provider === "zalopay") {
+      payload.zalopay_app_trans_id = data.app_trans_id;
+    }
 
     const response = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
@@ -957,6 +987,40 @@ onMounted(() => {
   fetchProvinces();
   fetchDataTable();
   checkUser();
+});
+
+onMounted(async () => {
+  const { provider, status, apptransid } = route.query;
+
+  if (provider === "zalopay" && status == 1) {
+    const modal = Modal.info({
+      title: "Đang xử lý đơn hàng của bạn...",
+      content: "Vui lòng chờ trong giây lát",
+      okButtonProps: { disabled: true },
+    });
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_APP_URL_API}/zalopay/query-order`,
+        { app_trans_id: apptransid }
+      );
+      modal.destroy();
+      if (res.data.return_code == 1) {
+        await handlePaymentSuccess({
+          provider: "zalopay",
+          data: { app_trans_id: apptransid },
+        });
+      } else {
+        modal.destroy();
+        Modal.error({
+          title: "Thanh toán thất bại",
+          content: res.data.return_message || "Giao dịch không thành công",
+        });
+      }
+      modal.destroy();
+    } catch (e) {
+      console.error("Error query zalo order:", e);
+    }
+  }
 });
 </script>
 

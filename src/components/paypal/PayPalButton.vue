@@ -57,8 +57,13 @@ onMounted(async () => {
 
           const result = response.data;
           // console.log("Phản hồi xác nhận thanh toán");
-
-          emit("payment-success", data.orderID);
+          emit("payment-success", {
+            provider: "paypal",
+            data: {
+              orderID: data.orderID,
+              ...result,
+            },
+          });
         } catch (error) {
           console.error("Error in onApprove:", error);
         }
