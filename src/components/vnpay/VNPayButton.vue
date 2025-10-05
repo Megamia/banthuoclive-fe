@@ -4,7 +4,7 @@
     class="vnpay-btn flex justify-center items-center"
   >
     <img
-      src="https://vnpay.vn/_nuxt/img/logo.1c2a3e9.svg"
+      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSutP9weqAPNNrV0V616bloZn2fwAdAOHqnFQ&s"
       class="w-[120px] h-[35px]"
       alt="VNPAY"
     />
