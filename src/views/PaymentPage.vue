@@ -375,18 +375,25 @@
                   :disabled="!formState.terms"
                   >Đặt hàng</a-button
                 >
-                <PayPalButton
-                  v-if="BankBtnRef"
-                  :amount="totals.subtotal"
-                  :form-state="formState"
-                  @payment-success="handlePaymentSuccess"
-                />
+                <a-flex v-if="BankBtnRef" class="flex-1 gap-[10px] justify-end">
+                  <PayPalButton
+                    :amount="totals.subtotal"
+                    :form-state="formState"
+                    @payment-success="handlePaymentSuccess"
+                  />
 
-                <ZaloPayButton
-                  v-if="BankBtnRef"
-                  :amount="totals.subtotal"
-                  :form-state="formState"
-                />
+                  <ZaloPayButton
+                    class="w-[200px] h-[38px]"
+                    :amount="totals.subtotal"
+                    :form-state="formState"
+                  />
+
+                  <VNPayButton
+                    class="w-[200px] h-[38px]"
+                    :amount="totals.subtotal"
+                    :form-state="formState"
+                  />
+                </a-flex>
               </a-flex>
             </a-flex>
           </a-flex>
@@ -406,8 +413,8 @@ import PayPalButton from "@/components/paypal/PayPalButton.vue";
 import { useRoute, useRouter } from "vue-router";
 import { getDataFromIndexedDB } from "@/store/indexedDB";
 import { Modal } from "ant-design-vue";
-// import MomoButton from "@/components/momo/MomoButton.vue";
 import ZaloPayButton from "@/components/zalo/ZaloPayButton.vue";
+import VNPayButton from "@/components/momo/VNPayButton.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -942,6 +949,8 @@ const handlePaymentSuccess = async ({ provider, data }) => {
       payload.paypal_order_id = data.orderID;
     } else if (provider === "zalopay") {
       payload.zalopay_app_trans_id = data.app_trans_id;
+    } else if (provider === "vnpay") {
+      payload.vnpay_order_id = data.orderId;
     }
 
     const response = await axios.post(
@@ -1019,6 +1028,19 @@ onMounted(async () => {
       modal.destroy();
     } catch (e) {
       console.error("Error query zalo order:", e);
+    }
+  }
+  if (provider === "vnpay") {
+    if (vnp_ResponseCode == "00") {
+      await handlePaymentSuccess({
+        provider: "vnpay",
+        data: { orderId: vnp_TxnRef },
+      });
+    } else {
+      Modal.error({
+        title: "Thanh toán thất bại",
+        content: "Giao dịch VNPAY không thành công",
+      });
     }
   }
 });

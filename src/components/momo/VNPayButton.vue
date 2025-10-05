@@ -1,0 +1,70 @@
+<template>
+  <button
+    @click="payWithVnpay"
+    class="vnpay-btn flex justify-center items-center"
+  >
+    <img
+      src="https://vnpay.vn/_nuxt/img/logo.1c2a3e9.svg"
+      class="w-[120px] h-[35px]"
+      alt="VNPAY"
+    />
+  </button>
+</template>
+
+<script setup>
+import axios from "axios";
+
+const props = defineProps({
+  amount: { type: Number, required: true },
+  formState: { type: Object, required: true },
+});
+
+const payWithVnpay = async () => {
+  try {
+    const res = await axios.post(
+      `${import.meta.env.VITE_APP_URL_API}/vnpay/create-order`,
+      {
+        amount: props.amount,
+        orderInfo: "Thanh toán đơn hàng test",
+      }
+    );
+
+    const payUrl = res.data?.data?.payUrl || res.data?.redirectUrl;
+
+    if (!payUrl) {
+      console.error("Không có payUrl trong response:", res.data);
+      return;
+    }
+
+    window.location.href = payUrl;
+  } catch (err) {
+    console.error("Error create VNPAY order:", err);
+  }
+};
+</script>
+
+<style scoped>
+.vnpay-btn {
+  background: transparent;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+  transition: all 0.3s ease;
+}
+
+.vnpay-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+}
+
+.vnpay-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(0, 102, 204, 0.25);
+}
+</style>

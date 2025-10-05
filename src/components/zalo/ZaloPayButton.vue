@@ -1,6 +1,9 @@
 <template>
-  <button @click="payWithZalo" class="zalopay-btn">
-    Thanh toán bằng ZaloPay
+  <button @click="payWithZalo" class="zalopay-btn flex justify-center items-center ">
+    <img
+      src="https://upload.wikimedia.org/wikipedia/vi/7/77/ZaloPay_Logo.png"
+    class="w-[200px] h-[30px]"
+      />
   </button>
 </template>
 
@@ -36,15 +39,27 @@ const payWithZalo = async () => {
 
 <style scoped>
 .zalopay-btn {
-  background: #0068ff;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
   font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 12px rgba(0, 104, 255, 0.3);
+  transition: all 0.3s ease;
 }
+
 .zalopay-btn:hover {
   opacity: 0.95;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 104, 255, 0.4);
+}
+
+.zalopay-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(0, 104, 255, 0.25);
 }
 </style>
