@@ -39,16 +39,14 @@ const payWithVnpay = async () => {
     window.location.href = payUrl;
   } catch (err) {
     if (err.response) {
-      // Server trả về code khác 2xx
       console.error("Error create VNPAY order - response:", {
         status: err.response.status,
         data: err.response.data,
+        headers: err.response.headers,
       });
     } else if (err.request) {
-      // Request gửi đi nhưng không có response
       console.error("Error create VNPAY order - no response:", err.request);
     } else {
-      // Lỗi khác (cấu hình, runtime,...)
       console.error("Error create VNPAY order - setup:", err.message);
     }
   }
