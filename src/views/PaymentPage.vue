@@ -386,12 +386,14 @@
                     class="w-[200px] h-[38px]"
                     :amount="totals.subtotal"
                     :form-state="formState"
+                    @click="openProcessingModal('zalopay')"
                   />
 
                   <VNPayButton
                     class="w-[200px] h-[38px]"
                     :amount="totals.subtotal"
                     :form-state="formState"
+                    @click="openProcessingModal('vnpay')"
                   />
                 </a-flex>
               </a-flex>
@@ -824,6 +826,16 @@ const rules = {
   ],
 };
 
+const modalWaitRef = ref(null);
+
+const openProcessingModal = (provider) => {
+  modalWaitRef.value = Modal.info({
+    title: "Đang xử lý đơn hàng của bạn...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
+};
+
 //CẦN UPDATE
 const onSubmit = async () => {
   if (!formState.province) {
@@ -941,7 +953,8 @@ const handlePaymentSuccess = async ({ provider, data }) => {
     content: "Vui lòng chờ trong giây lát",
     okButtonProps: { disabled: true },
   });
-
+  modalWaitRef.value?.destroy();
+  modalWaitRef.value = null;
   try {
     let payload = { ...JSON.parse(JSON.stringify(formState)) };
 
@@ -984,6 +997,7 @@ const handlePaymentSuccess = async ({ provider, data }) => {
     }, secondsToGo * 1000);
   } catch (error) {
     modal.destroy();
+    modalWaitRef.value?.destroy();
     Modal.error({
       title: "Tạo đơn hàng thất bại!",
       content: `${error.response?.data?.message || error.message}`,
@@ -1029,18 +1043,27 @@ onMounted(async () => {
     } catch (e) {
       console.error("Error query zalo order:", e);
     }
-  }
-  if (provider === "vnpay") {
-    if (vnp_ResponseCode == "00") {
-      await handlePaymentSuccess({
-        provider: "vnpay",
-        data: { orderId: vnp_TxnRef },
-      });
-    } else {
-      Modal.error({
-        title: "Thanh toán thất bại",
-        content: "Giao dịch VNPAY không thành công",
-      });
+  } else {
+    const vnp_ResponseCode = route.query.vnp_ResponseCode;
+    const vnp_TxnRef = route.query.vnp_TxnRef;
+    if (vnp_ResponseCode) {
+      setTimeout(async () => {
+        if (vnp_ResponseCode === "00") {
+          Modal.success({
+            title: "Thanh toán thành công",
+            content: "Giao dịch VNPAY đã được xử lý thành công.",
+          });
+          await handlePaymentSuccess({
+            provider: "vnpay",
+            data: { orderId: vnp_TxnRef },
+          });
+        } else {
+          Modal.error({
+            title: "Thanh toán thất bại",
+            content: "Giao dịch VNPAY không thành công",
+          });
+        }
+      }, 1500);
     }
   }
 });
