@@ -414,7 +414,7 @@ import { useRoute, useRouter } from "vue-router";
 import { getDataFromIndexedDB } from "@/store/indexedDB";
 import { Modal } from "ant-design-vue";
 import ZaloPayButton from "@/components/zalo/ZaloPayButton.vue";
-import VNPayButton from "@/components/momo/VNPayButton.vue";
+import VNPayButton from "@/components/vnpay/VNPayButton.vue";
 
 const route = useRoute();
 const router = useRouter();
