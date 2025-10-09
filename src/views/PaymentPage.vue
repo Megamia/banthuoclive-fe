@@ -381,20 +381,21 @@
                     :form-state="formState"
                     @payment-success="handlePaymentSuccess"
                   />
+                  <a-flex vertical class="gap-[10px]">
+                    <ZaloPayButton
+                      class="w-[200px] h-[38px]"
+                      :amount="totals.subtotal"
+                      :form-state="formState"
+                      @click="openProcessingModal('zalopay')"
+                    />
 
-                  <ZaloPayButton
-                    class="w-[200px] h-[38px]"
-                    :amount="totals.subtotal"
-                    :form-state="formState"
-                    @click="openProcessingModal('zalopay')"
-                  />
-
-                  <VNPayButton
-                    class="w-[200px] h-[38px]"
-                    :amount="totals.subtotal"
-                    :form-state="formState"
-                    @click="openProcessingModal('vnpay')"
-                  />
+                    <VNPayButton
+                      class="w-[200px] h-[38px]"
+                      :amount="totals.subtotal"
+                      :form-state="formState"
+                      @click="openProcessingModal('vnpay')"
+                    />
+                  </a-flex>
                 </a-flex>
               </a-flex>
             </a-flex>
