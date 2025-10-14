@@ -1,6 +1,6 @@
 <template>
   <div class="p-5">
-    <div class="p-5 border border-gray-400 rounded-lg">
+    <div class="p-5 border border-gray-400 rounded-lg relative">
       <h2 class="text-xl font-bold mb-4 text-green-600">
         Chat & Tìm kiếm sản phẩm
       </h2>
@@ -26,8 +26,20 @@
       <div
         ref="chatContainer"
         v-if="chatHistory.length"
-        class="mt-4 p-4 border rounded-lg bg-gray-100 max-h-80 overflow-y-scroll flex flex-col-reverse"
+        @scroll="checkScrollPosition"
+        class="mt-4 p-4 border rounded-lg bg-gray-100 max-h-80 overflow-y-auto "
       >
+        <!-- Nút “↓ Mới nhất” -->
+        <transition name="fade">
+          <button
+            v-if="showScrollButton"
+            @click="scrollToBottom"
+            class="absolute right-[40%] bottom-[10%] bg-green-600 text-white px-3 py-1 rounded-full shadow hover:bg-green-700 transition"
+          >
+            ↓ Mới nhất
+          </button>
+        </transition>
+
         <ul>
           <li v-for="(chat, index) in chatHistory" :key="index">
             <div class="pb-5">
@@ -70,13 +82,14 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watch } from "vue";
+import { ref, nextTick } from "vue";
 import axios from "axios";
 
 const userMessage = ref("");
 const chatHistory = ref([]);
 const chatContainer = ref(null);
 const loading = ref(false);
+const showScrollButton = ref(false);
 
 const askChatbot = async () => {
   if (loading.value) return;
@@ -101,6 +114,9 @@ const askChatbot = async () => {
     newChat.answer = data.reply || "Không nhận được phản hồi.";
     newChat.products = data.products || [];
     chatHistory.value = [...chatHistory.value];
+
+    await nextTick();
+    checkScrollAfterNewMessage(); 
   } catch (error) {
     console.error("Lỗi chatbot:", error);
     newChat.answer = "Đã xảy ra lỗi khi gửi tin nhắn!";
@@ -117,10 +133,46 @@ const fillLastQuestion = () => {
   }
 };
 
-watch(chatHistory, async () => {
-  await nextTick();
-  if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+const checkScrollPosition = () => {
+  const container = chatContainer.value;
+  if (!container) return;
+
+  const nearBottom =
+    container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+  showScrollButton.value = !nearBottom;
+};
+
+const checkScrollAfterNewMessage = () => {
+  const container = chatContainer.value;
+  if (!container) return;
+
+  const nearBottom =
+    container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+  if (!nearBottom) {
+    showScrollButton.value = true;
   }
-});
+};
+
+const scrollToBottom = async () => {
+  await nextTick();
+  const container = chatContainer.value;
+  if (container) {
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
+    });
+  }
+  showScrollButton.value = false;
+};
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
