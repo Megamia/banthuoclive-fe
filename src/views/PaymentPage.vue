@@ -488,7 +488,7 @@ const fetchDataTable = async () => {
   }
 };
 
-const checkUser = () => {
+const checkUser = async () => {
   const user = JSON.parse(localStorage.getItem("user"));
   if (user) {
     formState.user_id = user.id;
@@ -496,9 +496,9 @@ const checkUser = () => {
     formState.phone = user?.phone;
     formState.email = user.email;
     LocateState.province = user?.province;
-    onProvinceChange();
+    await onProvinceChange();
     LocateState.district = user?.district;
-    onDistrictChange();
+    await onDistrictChange();
     LocateState.subdistrict = user?.subdistrict;
     formState.address = user?.address;
   }
@@ -1007,65 +1007,78 @@ const handlePaymentSuccess = async ({ provider, data }) => {
   }
 };
 
-onMounted(() => {
-  fetchProvinces();
-  fetchDataTable();
-  checkUser();
-});
-
 onMounted(async () => {
-  const { provider, status, apptransid } = route.query;
+  const modalWait = Modal.info({
+    title: "Đang lấy thông tin tài khoản...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
 
-  if (provider === "zalopay" && status == 1) {
-    const modal = Modal.info({
-      title: "Đang xử lý đơn hàng của bạn...",
-      content: "Vui lòng chờ trong giây lát",
-      okButtonProps: { disabled: true },
-    });
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_APP_URL_API}/zalopay/query-order`,
-        { app_trans_id: apptransid }
-      );
-      modal.destroy();
-      if (res.data.return_code == 1) {
-        await handlePaymentSuccess({
-          provider: "zalopay",
-          data: { app_trans_id: apptransid },
-        });
-      } else {
+  try {
+    // 1️⃣ Bước đầu tiên: load dữ liệu người dùng & tỉnh
+    await fetchProvinces();
+    await fetchDataTable();
+    await checkUser();
+
+    // 2️⃣ Sau khi xong mới xử lý thanh toán (nếu có)
+    const { provider, status, apptransid } = route.query;
+
+    if (provider === "zalopay" && status == 1) {
+      const modal = Modal.info({
+        title: "Đang xử lý đơn hàng của bạn...",
+        content: "Vui lòng chờ trong giây lát",
+        okButtonProps: { disabled: true },
+      });
+
+      try {
+        const res = await axios.post(
+          `${import.meta.env.VITE_APP_URL_API}/zalopay/query-order`,
+          { app_trans_id: apptransid }
+        );
         modal.destroy();
-        Modal.error({
-          title: "Thanh toán thất bại",
-          content: res.data.return_message || "Giao dịch không thành công",
-        });
-      }
-      modal.destroy();
-    } catch (e) {
-      console.error("Error query zalo order:", e);
-    }
-  } else {
-    const vnp_ResponseCode = route.query.vnp_ResponseCode;
-    const vnp_TxnRef = route.query.vnp_TxnRef;
-    if (vnp_ResponseCode) {
-      setTimeout(async () => {
-        if (vnp_ResponseCode === "00") {
-          Modal.success({
-            title: "Thanh toán thành công",
-            content: "Giao dịch VNPAY đã được xử lý thành công.",
-          });
+
+        if (res.data.return_code == 1) {
           await handlePaymentSuccess({
-            provider: "vnpay",
-            data: { orderId: vnp_TxnRef },
+            provider: "zalopay",
+            data: { app_trans_id: apptransid },
           });
         } else {
           Modal.error({
             title: "Thanh toán thất bại",
-            content: "Giao dịch VNPAY không thành công",
+            content: res.data.return_message || "Giao dịch không thành công",
           });
         }
-      }, 1500);
+      } catch (e) {
+        console.error("Error query zalo order:", e);
+      }
+    } else {
+      // Xử lý VNPAY
+      const vnp_ResponseCode = route.query.vnp_ResponseCode;
+      const vnp_TxnRef = route.query.vnp_TxnRef;
+      if (vnp_ResponseCode) {
+        setTimeout(async () => {
+          if (vnp_ResponseCode === "00") {
+            Modal.success({
+              title: "Thanh toán thành công",
+              content: "Giao dịch VNPAY đã được xử lý thành công.",
+            });
+            await handlePaymentSuccess({
+              provider: "vnpay",
+              data: { orderId: vnp_TxnRef },
+            });
+          } else {
+            Modal.error({
+              title: "Thanh toán thất bại",
+              content: "Giao dịch VNPAY không thành công",
+            });
+          }
+        }, 1500);
+      }
     }
+  } catch (error) {
+    console.log("Error:", error);
+  } finally {
+    modalWait.destroy();
   }
 });
 </script>

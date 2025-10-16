@@ -1,5 +1,5 @@
 <template>
-  <div v-html="HDSD" class="description" />
+  <div v-html="HDSD" class="description text-[25px]" />
 </template>
 
 <script setup>

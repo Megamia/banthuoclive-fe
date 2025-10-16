@@ -84,14 +84,12 @@ const fetchData = async (value) => {
   if (!value || value == undefined) {
     value = activeKey.value;
   }
-  console.log(value);
 
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_POST}/hotNews/${value}`
     );
     data.value = response.data.data;
-    console.log(data.value);
   } catch (e) {
     console.log(e);
   }
@@ -160,7 +158,7 @@ const filterData = (data) => {
     }))
     .sort((a, b) => a.order - b.order);
   if (dataTab.value.length <= 0) {
-    console.log("Không có data");
+    // console.log("Không có data");
   }
 };
 </script>

@@ -193,7 +193,6 @@ const fetchData = async () => {
       `${import.meta.env.VITE_APP_URL_API_POST}/allPost`
     );
     data.value = response.data.data;
-    console.log(data.value);
   } catch (e) {
     console.log("Error: ", e);
   }
