@@ -37,9 +37,9 @@
         <a-flex
           v-for="itemChil in displayedItems"
           :key="itemChil.id"
-          class="max-w-[100%] min-w-[100px] flex-1"
+          class="max-w-[100%] min-w-[100px] flex-1 justify-center"
         >
-          <a-flex vertical class="bg-[#F3F4F6] rounded-lg pb-[20px] w-full">
+          <a-flex vertical class="bg-[#F3F4F6] rounded-lg pb-[20px] w-[100%] max-w-[350px]">
             <a-flex vertical align="center" class="flex-1">
               <div class="w-full relative pt-[20px] justify-center flex">
                 <img

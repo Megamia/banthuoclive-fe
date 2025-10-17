@@ -726,7 +726,7 @@ const find = async (code) => {
         },
       }
     );
-    modalWait.destroy();
+
     if (response.status === 200) {
       dataGHN.value = response.data.data;
 
@@ -740,6 +740,8 @@ const find = async (code) => {
     }
   } catch (e) {
     console.error("Error:", e.response ? e.response.data : e.message);
+  } finally {
+    modalWait.destroy();
   }
 };
 

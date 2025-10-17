@@ -40,7 +40,11 @@
               class="text-center flex-1 border p-4 flex items-center flex-col gap-[10px] min-h-[200px] overflow-hidden"
             >
               <img
-                :src="product.image?.path || 'https://via.placeholder.com/100'"
+                :src="
+                  product.image?.cloudinary_url ||
+                  product.image?.path ||
+                  'https://via.placeholder.com/100'
+                "
                 class="w-24 h-24 object-cover"
                 alt="product image"
               />
