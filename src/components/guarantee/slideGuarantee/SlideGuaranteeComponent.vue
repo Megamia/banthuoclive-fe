@@ -53,7 +53,7 @@
                 <img
                   :src="
                     itemChil?.image?.path ||
-                    'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
+                    'https://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
                   "
                   class="justify-center items-center w-[100%] h-[100%] min-h-[250px] max-h-[300px] object-cover"
                 />

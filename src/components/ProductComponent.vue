@@ -3,7 +3,7 @@
     <img
       :src="
         pathImg ||
-        'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
+        'https://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
       "
       class="w-[100%] bg-red-500 mb-5"
       v-if="pathImg"
@@ -47,7 +47,7 @@
                   :src="
                     itemChil.image?.cloudinary_url ||
                     itemChil.image?.path ||
-                    'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
+                    'https://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
                   "
                 />
                 <div

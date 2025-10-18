@@ -44,7 +44,7 @@
                 <a-image
                   :src="
                     activeImage ||
-                    'http://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
+                    'https://cptudong.vmts.vn/content/images/thumbs/default-image_450.png'
                   "
                   class="lg:max-w-[500px] max-w-[400px]"
                   alt="Product Image"
