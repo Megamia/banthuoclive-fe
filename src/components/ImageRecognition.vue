@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-6">
-    <h1 class="text-center font-bold text-[30px]">TÌM KIẾM SẢN PHẨM</h1>
+    <h1 class="text-center font-bold text-[30px]">TÌM KIẾM SẢN PHẨM BẰNG AI</h1>
 
     <input type="file" @change="handleFileUpload" />
     <input
@@ -240,6 +240,8 @@ const callClarifaiAPI = async (modelId) => {
     ) {
       return null;
     }
+    console.log("data: ", data);
+
     return data;
   } catch (err) {
     error.value = "Lỗi khi gọi API Clarifai.";

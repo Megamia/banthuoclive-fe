@@ -5,7 +5,7 @@
       Tìm nhà thuốc gần đây
     </button>
 
-    <div id="map" ref="mapContainer" class="map"></div>
+    <div ref="mapContainer" id="map"></div>
 
     <div v-if="loading" class="loading">Đang tải...</div>
     <div v-if="error" class="error">{{ error }}</div>
@@ -14,23 +14,23 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const mapContainer = ref(null);
 const loading = ref(false);
 const error = ref(null);
 
-let map = null;
-let platform = null;
+let map;
 let userMarker = null;
-let markers = [];
-let currentRoute = null;
+let pharmacyMarkers = [];
+let routeLine = null;
 
-const apiKey = import.meta.env.VITE_MAP_API_KEY;
-
+/* ================== GEO ================== */
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error("Trình duyệt không hỗ trợ định vị."));
+      reject(new Error("Trình duyệt không hỗ trợ định vị"));
       return;
     }
     navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -39,208 +39,208 @@ function getCurrentPosition() {
   });
 }
 
+/* ================== MAP ================== */
 const loadMap = async () => {
   await nextTick();
 
-  platform = new H.service.Platform({
-    apikey: apiKey,
-  });
+  map = L.map(mapContainer.value).setView([21.0285, 105.8542], 13);
 
-  const defaultLayers = platform.createDefaultLayers();
-
-  map = new H.Map(mapContainer.value, defaultLayers.vector.normal.map, {
-    center: { lat: 21.0285, lng: 105.8542 },
-    zoom: 12,
-  });
-
-  new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
-  H.ui.UI.createDefault(map, defaultLayers);
-
-  window.addEventListener("resize", () => {
-    map.getViewPort().resize();
-  });
-
-  setTimeout(() => {
-    map.getViewPort().resize();
-  }, 200);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors",
+  }).addTo(map);
 };
 
+/* ================== USER ================== */
 const relocateUser = async () => {
   loading.value = true;
   error.value = null;
 
   try {
-    const position = await getCurrentPosition();
-    const { latitude, longitude } = position.coords;
-    initUserMarker(latitude, longitude);
+    const pos = await getCurrentPosition();
+    const { latitude, longitude } = pos.coords;
+
+    if (userMarker) map.removeLayer(userMarker);
+
+    userMarker = L.marker([latitude, longitude])
+      .addTo(map)
+      .bindPopup("📍 Vị trí của bạn")
+      .openPopup();
+
+    map.setView([latitude, longitude], 15);
   } catch (err) {
-    error.value = "Không thể lấy vị trí: " + err.message;
-    loading.value = false;
-  }
-};
-
-const getUserLocation = async () => {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const position = await getCurrentPosition();
-    const { latitude, longitude } = position.coords;
-    await searchPharmacies(latitude, longitude);
-  } catch (err) {
-    error.value = "Không thể lấy vị trí: " + err.message;
-    loading.value = false;
-  }
-};
-
-const initUserMarker = (lat, lon) => {
-  if (!map) return;
-
-  if (userMarker) {
-    map.removeObject(userMarker);
-  }
-
-  const userIcon = new H.map.Icon(
-    "https://cdn-icons-png.flaticon.com/512/4781/4781517.png",
-    { size: { w: 32, h: 32 } }
-  );
-
-  userMarker = new H.map.Marker({ lat, lng: lon }, { icon: userIcon });
-  userMarker.addEventListener("tap", () => {
-    alert(`Vị trí của bạn:\nKinh độ: ${lon}\nVĩ độ: ${lat}`);
-  });
-  userMarker.addEventListener("pointerenter", () => {
-    map.getElement().style.cursor = "pointer";
-  });
-  userMarker.addEventListener("pointerleave", () => {
-    map.getElement().style.cursor = "default";
-  });
-
-  map.addObject(userMarker);
-  map.setCenter({ lat, lng: lon });
-
-  loading.value = false;
-};
-
-const searchPharmacies = async (lat, lon) => {
-  if (!map) return;
-
-  const url = `https://discover.search.hereapi.com/v1/discover?at=${lat},${lon}&q=pharmacy&limit=10&apikey=${apiKey}`;
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Lỗi tải dữ liệu từ API");
-    const data = await response.json();
-
-    markers.forEach((marker) => map.removeObject(marker));
-    markers = [];
-
-    if (!data.items || data.items.length === 0) {
-      error.value = "Không tìm thấy nhà thuốc nào!";
-      loading.value = false;
-      return;
-    }
-
-    data.items.forEach((pharmacy) => {
-      const pharmacyIcon = new H.map.Icon(
-        "https://cdn-icons-png.freepik.com/512/1596/1596389.png",
-        { size: { w: 32, h: 32 } }
-      );
-      const marker = new H.map.Marker(
-        { lat: pharmacy.position.lat, lng: pharmacy.position.lng },
-        { icon: pharmacyIcon }
-      );
-
-      marker.addEventListener("tap", () => {
-        if (!userMarker) {
-          alert("Bạn cần lấy vị trí hiện tại trước!");
-          return;
-        }
-
-        if (
-          confirm(
-            `Tên: ${pharmacy.title}\nĐịa chỉ: ${pharmacy.address.label}\nKhoảng cách: ${pharmacy.distance}m\n\nBạn có muốn chỉ đường đến đây không?`
-          )
-        ) {
-          const userPosition = userMarker.getGeometry();
-          drawRoute(
-            userPosition.lat,
-            userPosition.lng,
-            pharmacy.position.lat,
-            pharmacy.position.lng
-          );
-        }
-      });
-
-      marker.addEventListener("pointerenter", () => {
-        map.getElement().style.cursor = "pointer";
-      });
-
-      marker.addEventListener("pointerleave", () => {
-        map.getElement().style.cursor = "default";
-      });
-
-      markers.push(marker);
-      map.addObject(marker);
-    });
-
-    loading.value = false;
-  } catch (err) {
-    error.value = "Không thể tải dữ liệu từ API.";
-    console.error("Lỗi API:", err);
-    loading.value = false;
-  }
-};
-
-const drawRoute = async (startLat, startLng, endLat, endLng) => {
-  if (!map) return;
-
-  loading.value = true;
-  error.value = null;
-
-  if (currentRoute) {
-    map.removeObject(currentRoute);
-    currentRoute = null;
-  }
-
-  const routeUrl = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${startLat},${startLng}&destination=${endLat},${endLng}&return=polyline&apikey=${apiKey}`;
-
-  try {
-    const response = await fetch(routeUrl);
-    if (!response.ok) throw new Error("Lỗi tải dữ liệu đường đi");
-    const data = await response.json();
-
-    if (!data.routes || data.routes.length === 0) {
-      error.value = "Không tìm được đường đi.";
-      loading.value = false;
-      return;
-    }
-
-    const routeShape = data.routes[0].sections[0].polyline;
-    const linestring = H.geo.LineString.fromFlexiblePolyline(routeShape);
-
-    currentRoute = new H.map.Polyline(linestring, {
-      style: { strokeColor: "red", lineWidth: 4 },
-    });
-
-    map.addObject(currentRoute);
-    map.getViewModel().setLookAtData({ bounds: currentRoute.getBoundingBox() });
-  } catch (err) {
-    console.error("Lỗi vẽ đường:", err);
-    error.value = "Không thể vẽ đường đi.";
+    error.value = err.message;
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(() => {
-  loadMap();
-});
+/* ================== SEARCH PHARMACY ================== */
+const getUserLocation = async () => {
+  loading.value = true;
+  error.value = null;
 
+  try {
+    const pos = await getCurrentPosition();
+    const { latitude, longitude } = pos.coords;
+    await searchPharmacies(latitude, longitude);
+  } catch (err) {
+    error.value = err.message;
+    loading.value = false;
+  }
+};
+
+const buildPharmacyPopup = (tags, id, lat, lng, uLat, uLng) => {
+  return `
+    <div style="font-size:14px">
+      <b style="font-size:15px">💊 ${tags?.name || "Nhà thuốc"}</b><br/>
+
+      ${tags?.["addr:full"] ? `📍 ${tags["addr:full"]}<br/>` : ""}
+
+      ${
+        tags?.["addr:street"]
+          ? `📍 ${tags["addr:housenumber"] || ""} ${tags["addr:street"]}<br/>`
+          : ""
+      }
+
+      ${
+        tags?.phone || tags?.["contact:phone"]
+          ? `📞 ${tags.phone || tags["contact:phone"]}<br/>`
+          : ""
+      }
+
+      ${tags?.opening_hours ? `🕒 ${tags.opening_hours}<br/>` : ""}
+
+      ${
+        tags?.website || tags?.["contact:website"]
+          ? `🌐 <a href="${
+              tags.website || tags["contact:website"]
+            }" target="_blank">Website</a><br/>`
+          : ""
+      }
+
+      <button
+        id="route-${id}"
+        style="margin-top:6px;padding:4px 8px;cursor:pointer"
+      >
+        🚗 Chỉ đường
+      </button>
+    </div>
+  `;
+};
+
+const searchPharmacies = async (lat, lng) => {
+  if (!map) return;
+
+  loading.value = true;
+  error.value = null;
+
+  pharmacyMarkers.forEach((m) => map.removeLayer(m));
+  pharmacyMarkers = [];
+
+  const query = `
+    [out:json][timeout:25];
+    (
+      node["shop"~"pharmacy|chemist|drugstore"](around:3000,${lat},${lng});
+      node["amenity"="pharmacy"](around:3000,${lat},${lng});
+      way["shop"~"pharmacy|chemist|drugstore"](around:3000,${lat},${lng});
+      way["amenity"="pharmacy"](around:3000,${lat},${lng});
+    );
+    out center;
+  `;
+
+  try {
+    const res = await fetch("https://overpass.kumi.systems/api/interpreter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain",
+      },
+      body: query,
+    });
+
+    const data = await res.json();
+
+    if (!data.elements || data.elements.length === 0) {
+      error.value = "Không tìm thấy nhà thuốc trong bán kính 3km";
+      return;
+    }
+
+    data.elements.forEach((item) => {
+      const latP = item.lat || item.center.lat;
+      const lngP = item.lon || item.center.lon;
+
+      const marker = L.marker([latP, lngP]).addTo(map);
+
+      const popupHtml = buildPharmacyPopup(
+        item.tags || {},
+        item.id,
+        latP,
+        lngP,
+        lat,
+        lng
+      );
+
+      marker.bindPopup(popupHtml);
+
+      marker.on("popupopen", () => {
+        setTimeout(() => {
+          const btn = document.getElementById(`route-${item.id}`);
+          if (btn) btn.onclick = () => drawRoute(lat, lng, latP, lngP);
+        });
+      });
+
+      marker.on("popupopen", () => {
+        setTimeout(() => {
+          const btn = document.getElementById(`route-${item.id}`);
+          if (btn) btn.onclick = () => drawRoute(lat, lng, latP, lngP);
+        });
+      });
+
+      pharmacyMarkers.push(marker);
+    });
+
+    map.fitBounds(pharmacyMarkers.map((m) => m.getLatLng()));
+  } catch (err) {
+    console.error(err);
+    error.value = "Lỗi khi gọi Overpass API";
+  } finally {
+    loading.value = false;
+  }
+};
+
+/* ================== ROUTE ================== */
+const drawRoute = async (startLat, startLng, endLat, endLng) => {
+  loading.value = true;
+
+  if (routeLine) {
+    map.removeLayer(routeLine);
+    routeLine = null;
+  }
+
+  const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?geometries=geojson`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const coords = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+
+    routeLine = L.polyline(coords, {
+      color: "red",
+      weight: 4,
+    }).addTo(map);
+
+    map.fitBounds(routeLine.getBounds());
+  } catch (err) {
+    error.value = "Không thể vẽ đường đi";
+  } finally {
+    loading.value = false;
+  }
+};
+
+/* ================== LIFECYCLE ================== */
+onMounted(loadMap);
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", () => {
-    if (map) map.getViewPort().resize();
-  });
+  map?.remove();
 });
 </script>
 
@@ -248,45 +248,32 @@ onBeforeUnmount(() => {
 #map {
   width: 100vw;
   height: 500px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
 }
 
 .app {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-  text-align: center;
   padding: 12px;
+  text-align: center;
 }
 
 button {
-  padding: 12px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  border: none;
+  padding: 10px 14px;
+  margin: 5px;
   background: #007bff;
   color: white;
+  border: none;
   border-radius: 5px;
-  margin: 5px;
 }
 
 button:disabled {
   background: #aaa;
-  cursor: not-allowed;
-}
-
-.error {
-  color: red;
-  font-size: 14px;
-  margin-top: 12px;
 }
 
 .loading {
   color: #007bff;
-  font-size: 16px;
   font-weight: bold;
-  margin-top: 12px;
+}
+
+.error {
+  color: red;
 }
 </style>

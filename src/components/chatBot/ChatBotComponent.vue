@@ -27,7 +27,7 @@
         ref="chatContainer"
         v-if="chatHistory.length"
         @scroll="checkScrollPosition"
-        class="mt-4 p-4 border rounded-lg bg-gray-100 max-h-80 overflow-y-auto "
+        class="mt-4 p-4 border rounded-lg bg-gray-100 max-h-80 overflow-y-auto"
       >
         <!-- Nút “↓ Mới nhất” -->
         <transition name="fade">
@@ -114,9 +114,10 @@ const askChatbot = async () => {
     newChat.answer = data.reply || "Không nhận được phản hồi.";
     newChat.products = data.products || [];
     chatHistory.value = [...chatHistory.value];
+    console.log(chatHistory.value);
 
     await nextTick();
-    checkScrollAfterNewMessage(); 
+    checkScrollAfterNewMessage();
   } catch (error) {
     console.error("Lỗi chatbot:", error);
     newChat.answer = "Đã xảy ra lỗi khi gửi tin nhắn!";
