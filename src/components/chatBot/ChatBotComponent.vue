@@ -114,7 +114,6 @@ const askChatbot = async () => {
     newChat.answer = data.reply || "Không nhận được phản hồi.";
     newChat.products = data.products || [];
     chatHistory.value = [...chatHistory.value];
-    console.log(chatHistory.value);
 
     await nextTick();
     checkScrollAfterNewMessage();

@@ -1,14 +1,19 @@
 <template>
   <div class="flex flex-col gap-6">
     <h1 class="text-center font-bold text-[30px]">TÌM KIẾM SẢN PHẨM BẰNG AI</h1>
-
-    <input type="file" @change="handleFileUpload" />
-    <input
+    <div class="flex flex-1 justify-center text-2xl font-bold">
+      ⚠️ Hình ảnh chỉ mang tính chất tham khảo, sản phẩm có thể không đúng.
+    </div>
+    <div class="flex flex-row gap-[30px]">
+      <input type="file" @change="handleFileUpload" class="flex" />
+      <button @click="ClearAll">clear</button>
+    </div>
+    <!-- <input
       type="text"
       v-model="imageUrl"
       placeholder="Image URL"
       class="border-[1px] p-[5px]"
-    />
+    /> -->
 
     <button
       @click="analyzeImage"
@@ -119,6 +124,20 @@ const isLoading = ref(false);
 const isAnalyzed = ref(false);
 const error = ref(null);
 const first_attempt = ref(true);
+const fileInputRef = ref(null);
+
+const ClearAll = () => {
+  productsFromDB.value = [];
+  result.value = null;
+  error.value = null;
+  isAnalyzed.value = false;
+  isLoading.value = false;
+  imageUrl.value = null;
+
+  if (fileInputRef.value) {
+    fileInputRef.value.value = "";
+  }
+};
 
 const handleFileUpload = (event) => {
   const file = event.target.files[0];
@@ -149,6 +168,17 @@ const normalizeText = (text) =>
     .trim()
     .replace(/\s+/g, " ");
 
+const getReliableConcepts = (concepts) => {
+  if (!concepts || !concepts.length) return [];
+
+  const sorted = [...concepts].sort((a, b) => b.value - a.value);
+  const maxValue = sorted[0].value;
+
+  if (maxValue < 0.15) return [];
+
+  return sorted.filter((c) => c.value >= maxValue * 0.5);
+};
+
 const analyzeImage = async () => {
   if (!imageUrl.value) {
     error.value = "Vui lòng cung cấp ảnh!";
@@ -167,30 +197,25 @@ const analyzeImage = async () => {
 
     let clarifaiResponse = await callClarifaiAPI("thuoc");
 
-    if (
-      !clarifaiResponse ||
-      !clarifaiResponse.outputs[0].data.concepts.some((c) => c.value >= 0.5)
-    ) {
-      clarifaiResponse = await callClarifaiAPI(
-        "aaa03c23b3724a16a56b629203edc62c"
-      );
-    }
-
     if (!clarifaiResponse) {
       throw new Error("Không tìm thấy kết quả từ mô hình!");
     }
 
     result.value = clarifaiResponse;
 
-    let detectedCategory = result.value.outputs[0].data.concepts[0].name.trim();
-    detectedCategory = detectedCategory.replace(/\s+/g, " ");
-    detectedCategory = normalizeText(detectedCategory);
+    const concepts = result.value.outputs[0].data.concepts;
 
-    detectedCategory = categoryMapping[detectedCategory] || detectedCategory;
+    const reliableConcepts = getReliableConcepts(concepts);
+
+    const normalizedConcepts = reliableConcepts.map((c) =>
+      normalizeText(categoryMapping[c.name] || c.name)
+    );
 
     productsFromDB.value = dataProduct.filter((item) => {
       const categoryName = normalizeText(item.category?.name || "");
-      return categoryName.includes(detectedCategory);
+      return normalizedConcepts.some((concept) =>
+        categoryName.includes(concept)
+      );
     });
 
     if (productsFromDB.value.length === 0) {
@@ -206,58 +231,40 @@ const analyzeImage = async () => {
 const callClarifaiAPI = async (modelId) => {
   try {
     const response = await fetch(
-      `https://api.clarifai.com/v2/models/${modelId}/outputs`,
+      `${import.meta.env.VITE_APP_URL_API_CLARIFAI}/getDataClarifai`,
       {
         method: "POST",
         headers: {
-          Authorization: `Key ${import.meta.env.VITE_CLARIFAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          inputs: [
-            {
-              data: {
-                image: imageUrl.value.startsWith("data:image")
-                  ? { base64: imageUrl.value.split(",")[1] }
-                  : { url: imageUrl.value },
-              },
-            },
-          ],
+          modelId,
+          imageBase64: imageUrl.value.split(",")[1],
         }),
       }
     );
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+      throw new Error("Backend error");
     }
 
     const data = await response.json();
 
-    if (
-      data.status.code !== 10000 ||
-      !data.outputs ||
-      !data.outputs[0].data.concepts
-    ) {
+    if (data.status?.code !== 10000 || !data.outputs?.[0]?.data?.concepts) {
       return null;
     }
-    console.log("data: ", data);
 
     return data;
   } catch (err) {
-    error.value = "Lỗi khi gọi API Clarifai.";
     console.error(err);
+    error.value = "Không thể phân tích ảnh.";
     return null;
   }
 };
 
 const filteredConcepts = computed(() => {
-  if (!result.value || !result.value.outputs[0]?.data?.concepts) {
-    return [];
-  }
-  return result.value.outputs[0].data.concepts
-    .filter((c) => c.value >= 0.5)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 3);
+  const concepts = result.value?.outputs?.[0]?.data?.concepts || [];
+  return getReliableConcepts(concepts);
 });
 
 const productNamesWithConfidence = computed(() => {
