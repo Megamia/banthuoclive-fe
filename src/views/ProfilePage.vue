@@ -933,10 +933,21 @@ const handleEditInfo = () => {
 
 const handleChangeActivePage = async (value) => {
   activePage.value = value;
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (activePage.value == 3) {
-    await getAllDataOrder(user.id);
+
+  if (activePage.value !== 3) return;
+
+  const storedUser = localStorage.getItem("user");
+  if (!storedUser) {
+    Modal.error({
+      title: "Phiên đăng nhập đã hết hạn",
+      content: "Vui lòng đăng nhập lại",
+    });
+    router.push("/login");
+    return;
   }
+
+  const user = JSON.parse(storedUser);
+  await getAllDataOrder(user.id);
 };
 
 const fetchProvinces = async () => {
