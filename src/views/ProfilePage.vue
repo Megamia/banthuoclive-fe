@@ -150,7 +150,7 @@
                   >
                   <a-select
                     v-model:value="profile.province"
-                    @change="onProvinceChange"
+                    @change="onProvinceChangeByUser"
                     placeholder="Chọn Tỉnh/Thành phố"
                     id="province"
                     :bordered="false"
@@ -174,7 +174,7 @@
                   >
                   <a-select
                     v-model:value="profile.district"
-                    @change="onDistrictChange"
+                    @change="onDistrictChangeByUser"
                     placeholder="Chọn Quận/Huyện"
                     id="district"
                     :bordered="false"
@@ -604,7 +604,20 @@ import { CdEye, CdEyeClosed } from "@kalimahapps/vue-icons";
 import axios from "axios";
 import { Modal } from "ant-design-vue";
 import TableAppointmentComponent from "@/components/appointment/TableAppointmentComponent.vue";
+import {
+  getOrderCached,
+  saveOrderCached,
+  getProvinceCached,
+  saveProvinceCached,
+  getDistrictsCached,
+  saveDistrictsCached,
+  getWardsCached,
+  saveWardsCached,
+} from "@/store/indexedDB";
 const router = useRouter();
+
+const districtCache = new Map();
+const wardCache = new Map();
 
 const provinces = ref([]);
 const districts = ref([]);
@@ -625,6 +638,20 @@ let isUpdatingProvince = false;
 let isUpdatingDistrict = false;
 
 const phoneError = ref("");
+
+const getCache = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const setCache = (key, data) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
 
 const validatePhoneValue = (value) => {
   if (!value) {
@@ -781,39 +808,58 @@ const formatShippingStatus = (value) => {
 };
 
 const getDataOrder = async (order_code) => {
-  try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_ORDER}/getDataOrder/${order_code}`
-    );
-
-    if (response.data.status === 1) {
-      const data = response.data.dataOrder.property;
-
-      const provinceName = await fetchProvinceNameById(data.province);
-
-      const districtsData = await getDistrictsByProvinceId(data.province);
-      const district = districtsData.find(
-        (d) => String(d.DistrictID) === String(data.district)
-      );
-
-      const wardsData = await getWardsByDistrictId(data.district);
-      const ward = wardsData.find(
-        (w) => String(w.WardCode) === String(data.subdistrict)
-      );
-
-      dataInfor.value = {
-        name: data.name,
-        phone: data.phone,
-        address: data.address,
-        province: provinceName || "Lỗi dữ liệu",
-        district: district ? district.DistrictName : "Lỗi dữ liệu",
-        ward: ward ? ward.WardName : "Lỗi dữ liệu",
-        shipping_status: response.data.status_id,
-      };
-    }
-  } catch (e) {
-    console.log("Error: ", e);
+  const cachedOrder = await getOrderCached(order_code);
+  if (cachedOrder) {
+    dataInfor.value = cachedOrder;
+    return;
   }
+
+  const res = await axios.get(
+    `${import.meta.env.VITE_APP_URL_API_ORDER}/getDataOrder/${order_code}`
+  );
+
+  if (res.data.status !== 1) return;
+
+  const data = res.data.dataOrder.property;
+
+  let provinceName = await getProvinceCached(data.province);
+  if (!provinceName) {
+    provinceName = await fetchProvinceNameById(data.province);
+    saveProvinceCached(data.province, provinceName);
+  }
+
+  let districts = await getDistrictsCached(data.province);
+  if (!districts) {
+    districts = await getDistrictsByProvinceId(data.province);
+    saveDistrictsCached(data.province, districts);
+  }
+
+  let wards = await getWardsCached(data.district);
+  if (!wards) {
+    wards = await getWardsByDistrictId(data.district);
+    saveWardsCached(data.district, wards);
+  }
+
+  const district = districts.find(
+    (d) => String(d.DistrictID) === String(data.district)
+  );
+
+  const ward = wards.find(
+    (w) => String(w.WardCode) === String(data.subdistrict)
+  );
+
+  const finalData = {
+    name: data.name,
+    phone: data.phone,
+    address: data.address,
+    province: provinceName,
+    district: district?.DistrictName || "",
+    ward: ward?.WardName || "",
+    shipping_status: res.data.status_id,
+  };
+
+  dataInfor.value = finalData;
+  saveOrderCached(order_code, finalData);
 };
 
 const getAllDataOrder = async (id) => {
@@ -874,6 +920,50 @@ const fetchProvinceNameById = (id) => {
 //   const ward = wards.value.find((w) => String(w.WardCode) === String(id));
 //   return ward ? ward.WardName : "";
 // };
+
+const fetchDistricts = async (provinceId) => {
+  if (districtCache.has(provinceId)) {
+    return districtCache.get(provinceId);
+  }
+
+  const cached = getCache(`ghn_districts_${provinceId}`);
+  if (cached) {
+    districtCache.set(provinceId, cached);
+    return cached;
+  }
+
+  const res = await axios.get(
+    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceId}`
+  );
+
+  const data = res.data?.data || [];
+  districtCache.set(provinceId, data);
+  setCache(`ghn_districts_${provinceId}`, data);
+
+  return data;
+};
+
+const fetchWards = async (districtId) => {
+  if (wardCache.has(districtId)) {
+    return wardCache.get(districtId);
+  }
+
+  const cached = getCache(`ghn_wards_${districtId}`);
+  if (cached) {
+    wardCache.set(districtId, cached);
+    return cached;
+  }
+
+  const res = await axios.get(
+    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtId}`
+  );
+
+  const data = res.data?.data || [];
+  wardCache.set(districtId, data);
+  setCache(`ghn_wards_${districtId}`, data);
+
+  return data;
+};
 
 const getDistrictsByProvinceId = async (provinceId) => {
   if (!provinceId) return [];
@@ -963,95 +1053,47 @@ const fetchProvinces = async () => {
   }
 };
 
-const onProvinceChange = async (provinceCode) => {
-  if (!provinceCode || isUpdatingProvince) return;
-  isUpdatingProvince = true;
-  districts.value = null;
+const onProvinceChangeByUser = async (provinceId) => {
+  profile.value.province = provinceId;
+
   profile.value.district = null;
-  try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceCode}`
-    );
-    if (response.data.status === 1) {
-      districts.value = response.data.data || [];
-    }
+  profile.value.subdistrict = null;
+  wards.value = [];
 
-    const currentDistrictExists = districts.value.some(
-      (district) => Number(district.ProvinceID) === Number(provinceCode)
-    );
-
-    if (!currentDistrictExists) {
-      profile.value.district = null;
-      wards.value = [];
-      profile.value.subdistrict = null;
-    } else if (profile.value.district) {
-      await onDistrictChange(profile.value.district);
-    }
-  } catch (error) {
-    console.error("Failed to fetch districts:", error);
-  } finally {
-    isUpdatingProvince = false;
-  }
+  districts.value = await fetchDistricts(provinceId);
 };
 
-const onDistrictChange = async (districtCode) => {
-  if (!districtCode || isUpdatingDistrict) return;
-  wards.value = null;
+const onDistrictChangeByUser = async (districtId) => {
+  profile.value.district = districtId;
+
   profile.value.subdistrict = null;
-  isUpdatingDistrict = true;
-  try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtCode}`
-    );
-    if (response.data.status === 1) {
-      wards.value = response.data.data || [];
-    }
 
-    const currentWardExists = wards.value.some(
-      (ward) => Number(ward.DistrictID) === Number(districtCode)
-    );
-
-    if (!currentWardExists) {
-      profile.value.subdistrict = null;
-      return;
-    }
-  } catch (error) {
-    console.error("Failed to fetch wards:", error);
-  } finally {
-    isUpdatingDistrict = false;
-  }
+  wards.value = await fetchWards(districtId);
 };
 
 const fetchProfile = async (storedUser) => {
   if (!storedUser) return;
+
   const user = JSON.parse(storedUser);
 
-  profile.value.first_name = user?.first_name;
-  profile.value.last_name = user?.last_name;
-  profile.value.email = user.email;
-  profile.value.phone = user?.phone || null;
-  profile.value.address = user?.address || "";
+  profile.value = {
+    ...profile.value,
+    first_name: user?.first_name || "",
+    last_name: user?.last_name || "",
+    email: user?.email || "",
+    phone: user?.phone || null,
+    address: user?.address || "",
+    province: user?.province ? Number(user.province) : null,
+    district: user?.district ? Number(user.district) : null,
+    subdistrict: user?.subdistrict ? String(user.subdistrict) : null,
+  };
 
-  const provinceCode = user?.province ? Number(user.province) : null;
-  const districtCode = user?.district ? Number(user.district) : null;
-  const wardCode = user?.subdistrict ? String(user.subdistrict) : null;
-
-  if (provinceCode) {
-    profile.value.province = provinceCode;
-    await onProvinceChange(provinceCode);
+  if (profile.value.province) {
+    districts.value = await fetchDistricts(profile.value.province);
   }
 
-  if (
-    districtCode &&
-    districts.value.some((d) => Number(d.ProvinceID) === provinceCode)
-  ) {
-    profile.value.district = districtCode;
-    await onDistrictChange(districtCode);
-  }
-  if (wardCode && wards.value.some((w) => String(w.WardCode) === wardCode)) {
-    profile.value.subdistrict = wardCode;
-  } else {
-    profile.value.subdistrict = null;
+  if (profile.value.district) {
+    wards.value = await fetchWards(profile.value.district);
   }
 };
 

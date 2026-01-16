@@ -1,8 +1,18 @@
 import { openDB } from "idb";
 
-const dbPromise = openDB("myDatabase", 2, {
+const dbPromise = openDB("myDatabase", 3, {
   upgrade(db) {
-    const stores = ["products", "detailProduct", "cart", "compare", "category"];
+    const stores = [
+      "products",
+      "detailProduct",
+      "cart",
+      "compare",
+      "category",
+      "ghn_provinces",
+      "ghn_districts",
+      "ghn_wards",
+      "orders"
+    ];
     stores.forEach((store) => {
       if (!db.objectStoreNames.contains(store)) {
         db.createObjectStore(store, { keyPath: "id" });
@@ -10,6 +20,11 @@ const dbPromise = openDB("myDatabase", 2, {
     });
   },
 });
+const DEFAULT_TTL = 24 * 60 * 60 * 1000;
+
+const isExpired = (timestamp, ttl = DEFAULT_TTL) => {
+  return Date.now() - timestamp > ttl;
+};
 
 export const getAllDataFromIndexedDB = async () => {
   try {
@@ -43,7 +58,7 @@ export const saveDataToIndexedDB = async (storeName, data) => {
     await store.clear();
 
     for (const item of data) {
-      const plainItem = JSON.parse(JSON.stringify(item)); 
+      const plainItem = JSON.parse(JSON.stringify(item));
       plainItem.timestamp = timestamp;
       store.put(plainItem);
     }
@@ -118,4 +133,86 @@ export const updateItemInIndexedDB = async (item) => {
   } catch (error) {
     console.error(" Lỗi khi cập nhật phần tử trong giỏ hàng:", error);
   }
+};
+
+
+export const getProvinceCached = async (provinceId) => {
+  const db = await dbPromise;
+  const store = db.transaction("ghn_provinces").objectStore("ghn_provinces");
+
+  const cached = await store.get(provinceId);
+  if (cached && !isExpired(cached.timestamp)) {
+    return cached.name;
+  }
+
+  return null;
+};
+
+export const saveProvinceCached = async (provinceId, name) => {
+  const db = await dbPromise;
+  await db.put("ghn_provinces", {
+    id: provinceId,
+    name,
+    timestamp: Date.now(),
+  });
+};
+export const getDistrictsCached = async (provinceId) => {
+  const db = await dbPromise;
+  const store = db.transaction("ghn_districts").objectStore("ghn_districts");
+
+  const cached = await store.get(provinceId);
+  if (cached && !isExpired(cached.timestamp)) {
+    return cached.data;
+  }
+
+  return null;
+};
+
+export const saveDistrictsCached = async (provinceId, districts) => {
+  const db = await dbPromise;
+  await db.put("ghn_districts", {
+    id: provinceId,
+    data: districts,
+    timestamp: Date.now(),
+  });
+};
+export const getWardsCached = async (districtId) => {
+  const db = await dbPromise;
+  const store = db.transaction("ghn_wards").objectStore("ghn_wards");
+
+  const cached = await store.get(districtId);
+  if (cached && !isExpired(cached.timestamp)) {
+    return cached.data;
+  }
+
+  return null;
+};
+
+export const saveWardsCached = async (districtId, wards) => {
+  const db = await dbPromise;
+  await db.put("ghn_wards", {
+    id: districtId,
+    data: wards,
+    timestamp: Date.now(),
+  });
+};
+export const getOrderCached = async (orderCode) => {
+  const db = await dbPromise;
+  const store = db.transaction("orders").objectStore("orders");
+
+  const cached = await store.get(orderCode);
+  if (cached && !isExpired(cached.timestamp, 5 * 60 * 1000)) {
+    return cached.data;
+  }
+
+  return null;
+};
+
+export const saveOrderCached = async (orderCode, data) => {
+  const db = await dbPromise;
+  await db.put("orders", {
+    id: orderCode,
+    data,
+    timestamp: Date.now(),
+  });
 };

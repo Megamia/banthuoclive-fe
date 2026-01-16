@@ -418,6 +418,7 @@ import { getDataFromIndexedDB } from "@/store/indexedDB";
 import { Modal } from "ant-design-vue";
 import ZaloPayButton from "@/components/zalo/ZaloPayButton.vue";
 import VNPayButton from "@/components/vnpay/VNPayButton.vue";
+import { getOrderCached, saveOrderCached } from "@/store/indexedDB";
 
 const route = useRoute();
 const router = useRouter();
@@ -432,8 +433,11 @@ const formState = reactive({
   phone: "",
   email: "",
   province: "",
+  province_name: "",
   district: "",
+  district_name: "",
   subdistrict: "",
+  subdistrict_name: "",
   address: "",
   diffname: "",
   diffphone: "",
@@ -489,19 +493,22 @@ const fetchDataTable = async () => {
 };
 
 const checkUser = async () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (user) {
-    formState.user_id = user.id;
-    formState.name = `${user.last_name || ""} ${user.first_name || ""}`.trim();
-    formState.phone = user?.phone;
-    formState.email = user.email;
-    LocateState.province = user?.province;
-    await onProvinceChange();
-    LocateState.district = user?.district;
-    await onDistrictChange();
-    LocateState.subdistrict = user?.subdistrict;
-    formState.address = user?.address;
-  }
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+
+  const user = JSON.parse(userStr);
+
+  formState.user_id = user.id;
+  formState.name = `${user.last_name || ""} ${user.first_name || ""}`.trim();
+  formState.phone = user?.phone;
+  formState.email = user.email;
+  formState.address = user?.address;
+
+  return {
+    province: user.province,
+    district: user.district,
+    subdistrict: user.subdistrict,
+  };
 };
 
 const provinces = ref([]);
@@ -561,129 +568,82 @@ const fetchProvinces = async () => {
   }
 };
 
-const onProvinceChange = async () => {
-  const provinceCode = LocateState.province;
-  const diffprovinceCode = LocateState.diffprovince;
+const onProvinceChange = async (fromDB = false) => {
+  if (!LocateState.province) return;
 
-  try {
-    if (provinceCode) {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceCode}`
-      );
-      if (response.data.status === 1) {
-        districts.value = response.data.data || [];
-      }
+  LocateState.district = null;
+  LocateState.subdistrict = null;
 
-      if (!districts.value.some((d) => d.DistrictID === LocateState.district)) {
-        LocateState.district = null;
-        wards.value = [];
-        LocateState.subdistrict = null;
-      } else {
-        await onDistrictChange();
-      }
-    }
+  formState.district = "";
+  formState.subdistrict = "";
 
-    if (diffprovinceCode) {
-      const response = await axios.get(
-        `${
-          import.meta.env.VITE_APP_URL_API_GHN
-        }/ghn/districts/${diffprovinceCode}`,
-        {
-          headers: { Token: token },
-        }
-      );
-      diffdistricts.value = response.data.data || [];
+  districts.value = [];
+  wards.value = [];
 
-      if (
-        !diffdistricts.value.some(
-          (d) => d.DistrictID === LocateState.diffdistrict
-        )
-      ) {
-        LocateState.diffdistrict = null;
-        diffwards.value = [];
-        LocateState.diffsubdistrict = null;
-      }
-    }
-  } catch (error) {
-    console.error("Failed to fetch GHN districts:", error);
+  const res = await axios.get(
+    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${
+      LocateState.province
+    }`
+  );
+
+  if (res.data.status === 1) {
+    districts.value = res.data.data || [];
   }
 };
 
-const onDistrictChange = async () => {
-  const districtCode = LocateState.district;
-  const diffdistrictCode = LocateState.diffdistrict;
+const onDistrictChange = async (fromDB = false) => {
+  if (!LocateState.district) return;
 
-  try {
-    if (districtCode) {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtCode}`
-      );
-      if (response.data.status === 1) {
-        wards.value = response.data.data || [];
-      }
-      if (
-        LocateState.subdistrict &&
-        !wards.value.some(
-          (w) => String(w.WardCode) === String(LocateState.subdistrict)
-        )
-      ) {
-        LocateState.subdistrict = null;
-      }
-    }
+  LocateState.subdistrict = null;
+  formState.subdistrict = "";
+  wards.value = [];
 
-    if (diffdistrictCode) {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${diffdistrictCode}`,
-        {
-          headers: { Token: token },
-        }
-      );
-      diffwards.value = response.data.data || [];
+  const res = await axios.get(
+    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${LocateState.district}`
+  );
 
-      if (
-        LocateState.diffsubdistrict &&
-        !diffwards.value.some(
-          (w) => String(w.WardCode) === String(LocateState.diffsubdistrict)
-        )
-      ) {
-        LocateState.diffsubdistrict = null;
-      }
-    }
-  } catch (error) {
-    console.error("Failed to fetch GHN wards:", error);
+  if (res.data.status === 1) {
+    wards.value = res.data.data || [];
   }
 };
 
 function handleProvinceChange(newProvinceCode) {
-  const selectedProvince = provinces.value.find(
-    (p) => p.ProvinceID === newProvinceCode
-  );
-  if (selectedProvince) {
-    formState.province = selectedProvince.ProvinceID ?? "";
-  } else {
+  const p = provinces.value.find((x) => x.ProvinceID === newProvinceCode);
+
+  if (!p) {
     formState.province = "";
+    formState.province_name = "";
+    return;
   }
+
+  formState.province = p.ProvinceID;
+  formState.province_name = p.ProvinceName; 
 }
+
 function handleDistrictChange(newDistrictCode) {
-  const selectedDistrict = districts.value.find(
-    (d) => d.DistrictID === newDistrictCode
-  );
-  if (selectedDistrict) {
-    formState.district = selectedDistrict.DistrictID ?? "";
-  } else {
+  const d = districts.value.find((x) => x.DistrictID === newDistrictCode);
+
+  if (!d) {
     formState.district = "";
+    formState.district_name = "";
+    return;
   }
+
+  formState.district = d.DistrictID;
+  formState.district_name = d.DistrictName;
 }
 
 function handleSubdistrictChange(newSubdistrictCode) {
-  const selectedWard = wards.value.find(
-    (w) => w.WardCode === String(newSubdistrictCode)
-  );
-  if (selectedWard) {
-    formState.subdistrict = selectedWard.WardCode ?? "";
-  } else {
+  const w = wards.value.find((x) => x.WardCode === String(newSubdistrictCode));
+
+  if (!w) {
     formState.subdistrict = "";
+    formState.subdistrict_name = "";
+    return;
   }
+
+  formState.subdistrict = w.WardCode;
+  formState.subdistrict_name = w.WardName; 
 }
 
 function handleDiffProvinceChange(newDiffProvinceCode) {
@@ -719,13 +679,29 @@ function handleDiffSubdistrictChange(newDiffSubdistrictCode) {
   }
 }
 
-watch(() => LocateState.province, handleProvinceChange);
-watch(() => LocateState.district, handleDistrictChange);
-watch(() => LocateState.subdistrict, handleSubdistrictChange);
 watch(() => LocateState.diffprovince, handleDiffProvinceChange);
 watch(() => LocateState.diffdistrict, handleDiffDistrictChange);
 watch(() => LocateState.diffsubdistrict, handleDiffSubdistrictChange);
+watch(
+  () => LocateState.province,
+  (val) => {
+    formState.province = val ? Number(val) : "";
+  }
+);
 
+watch(
+  () => LocateState.district,
+  (val) => {
+    formState.district = val ? Number(val) : "";
+  }
+);
+
+watch(
+  () => LocateState.subdistrict,
+  (val) => {
+    formState.subdistrict = val ? String(val) : "";
+  }
+);
 const rules = {
   name: [
     { required: true, message: "Vui lòng nhập họ và tên", trigger: "submit" },
@@ -939,71 +915,71 @@ const onSubmit = async () => {
 //CẦN UPDATE
 
 const handlePaymentSuccess = async ({ provider, data }) => {
-  const userStr = localStorage.getItem("user");
+  const paymentKey =
+    provider === "paypal"
+      ? data.orderID
+      : provider === "zalopay"
+      ? data.app_trans_id
+      : data.orderId;
 
-  if (userStr) {
-    const u = JSON.parse(userStr);
-
-    formState.province = u.province;
-    formState.district = u.district;
-    formState.subdistrict = u.subdistrict;
+  const cachedOrder = await getOrderCached(paymentKey);
+  if (cachedOrder) {
+    router.push(`/payment/order-received/${cachedOrder.order_code}`);
+    return;
   }
 
   const modal = Modal.info({
-    title: "Đang xử lý đơn hàng của bạn...",
+    title: "Đang xử lý đơn hàng...",
     content: "Vui lòng chờ trong giây lát",
     okButtonProps: { disabled: true },
   });
-  modalWaitRef.value?.destroy();
-  modalWaitRef.value = null;
+
   try {
-    let payload = { ...JSON.parse(JSON.stringify(formState)) };
+    const payload = JSON.parse(JSON.stringify(formState));
 
-    if (provider === "paypal") {
-      payload.paypal_order_id = data.orderID;
-    } else if (provider === "zalopay") {
-      payload.zalopay_app_trans_id = data.app_trans_id;
-    } else if (provider === "vnpay") {
-      payload.vnpay_order_id = data.orderId;
-    }
+    if (provider === "paypal") payload.paypal_order_id = paymentKey;
+    if (provider === "zalopay") payload.zalopay_app_trans_id = paymentKey;
+    if (provider === "vnpay") payload.vnpay_order_id = paymentKey;
 
-    const response = await axios.post(
+    const res = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_ORDER}/createOrder`,
       payload
     );
 
-    modal.destroy();
+    await saveOrderCached(paymentKey, res.data);
+
     store.dispatch("product/clearDataStoreCart");
+    modal.destroy();
 
-    let secondsToGo = 5;
-    const modalSuccess = Modal.success({
-      title: "Tạo đơn hàng thành công!",
-      content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
-      onOk() {
-        router.push(`/payment/order-received/${response.data.order_code}`);
-      },
-    });
-
-    const interval = setInterval(() => {
-      secondsToGo -= 1;
-      modalSuccess.update({
-        content: `Chuyển sang trang chi tiết sau ${secondsToGo} giây.`,
-      });
-    }, 1000);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      modalSuccess.destroy();
-      router.push(`/payment/order-received/${response.data.order_code}`);
-    }, secondsToGo * 1000);
+    router.push(`/payment/order-received/${res.data.order_code}`);
   } catch (error) {
     modal.destroy();
-    modalWaitRef.value?.destroy();
     Modal.error({
-      title: "Tạo đơn hàng thất bại!",
-      content: `${error.response?.data?.message || error.message}`,
+      title: "Tạo đơn hàng thất bại",
+      content: error.response?.data?.message || error.message,
     });
-    console.error("Error adding order to database:", error);
+  }
+};
+const loadAddressFromDB = async (address) => {
+  if (!address) return;
+
+  const p = provinces.value.find((x) => x.ProvinceID == address.province);
+  if (p) {
+    LocateState.province = p.ProvinceID; 
+  }
+
+  await onProvinceChange(true);
+
+  const d = districts.value.find((x) => x.DistrictID == address.district);
+  if (d) {
+    LocateState.district = d.DistrictID;
+  }
+
+  await onDistrictChange(true);
+
+  const w = wards.value.find((x) => x.WardCode == address.subdistrict);
+  if (w) {
+    LocateState.subdistrict = w.WardCode;
   }
 };
 
@@ -1015,12 +991,13 @@ onMounted(async () => {
   });
 
   try {
-    // 1️⃣ Bước đầu tiên: load dữ liệu người dùng & tỉnh
     await fetchProvinces();
     await fetchDataTable();
-    await checkUser();
+    const userAddress = await checkUser();
 
-    // 2️⃣ Sau khi xong mới xử lý thanh toán (nếu có)
+    if (userAddress) {
+      await loadAddressFromDB(userAddress);
+    }
     const { provider, status, apptransid } = route.query;
 
     if (provider === "zalopay" && status == 1) {
@@ -1052,7 +1029,6 @@ onMounted(async () => {
         console.error("Error query zalo order:", e);
       }
     } else {
-      // Xử lý VNPAY
       const vnp_ResponseCode = route.query.vnp_ResponseCode;
       const vnp_TxnRef = route.query.vnp_TxnRef;
       if (vnp_ResponseCode) {
