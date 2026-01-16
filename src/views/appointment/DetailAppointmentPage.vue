@@ -150,6 +150,7 @@ import { Modal } from "ant-design-vue";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import "./DetailAppointmentPage.css";
+import { getDataFromIndexedDB } from "@/store/indexedDB";
 
 dayjs.locale("vi");
 
@@ -313,53 +314,86 @@ const handleChangeDay = (value) => {
 };
 
 const fetchDataDoctors = async () => {
+  const cachedDoctors = await getDataFromIndexedDB("doctors");
+
+  if (cachedDoctors?.length) {
+    const cachedDoctor = cachedDoctors.find((d) => String(d.id) === String(id));
+    if (cachedDoctor) {
+      doctors.value = cachedDoctor;
+      await fetchDataSchedules(); 
+      return;
+    }
+  }
+
   const modalWait = Modal.info({
     title: "Đang tải thông tin bác sĩ.",
     content: "Vui lòng chờ trong giây lát",
     okButtonProps: { disabled: true },
   });
+
   try {
     const response = await axios.get(
       `${
         import.meta.env.VITE_APP_URL_API_APPOINTMENT
       }/getDataAllDoctorById/${id}`
     );
+
     if (response.data.status === 1) {
       doctors.value = response.data.data;
-      localStorage.setItem("doctor", JSON.stringify(doctors.value));
+
+      await saveDataToIndexedDB("doctors", [doctors.value]);
+
       await fetchDataSchedules();
     } else {
       Modal.error({
-        title: "Xảy ra lỗi khi lấy thông tin các bác sĩ",
-        content: `${response.data.message}`,
+        title: "Xảy ra lỗi khi lấy thông tin bác sĩ",
+        content: response.data.message,
       });
     }
-    modalWait.destroy();
   } catch (e) {
-    modalWait.destroy();
     Modal.error({
-      title: "Xảy ra lỗi khi lấy thông tin các bác sĩ",
-      content: `${response.data.message}`,
+      title: "Xảy ra lỗi",
+      content: "Không thể tải thông tin bác sĩ",
     });
-    console.log("Error: ", e);
+  } finally {
+    modalWait.destroy();
   }
 };
 
 const fetchDataSchedules = async () => {
+  const cachedSchedules = await getDataFromIndexedDB("detailProduct");
+
+  if (cachedSchedules?.length) {
+    const cached = cachedSchedules.find((s) => String(s.id) === String(id));
+
+    if (cached) {
+      schedules.value = cached.data;
+      return;
+    }
+  }
+
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/doctors/${id}/schedules`
     );
+
     if (response.data.status === 1) {
       schedules.value = response.data.data;
+
+      await saveDataToIndexedDB("detailProduct", [
+        {
+          id,
+          data: schedules.value,
+        },
+      ]);
     } else {
       Modal.error({
-        title: "Xảy ra lỗi khi lấy thông tin lịch làm việc",
-        content: `${response.data.message}`,
+        title: "Lỗi lịch làm việc",
+        content: response.data.message,
       });
     }
   } catch (e) {
-    console.log("Error: ", e);
+    console.log("Error fetch schedules:", e);
   }
 };
 

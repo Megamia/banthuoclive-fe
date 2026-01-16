@@ -12,17 +12,30 @@
     >
       <slot></slot>
     </main>
-    <div
-      class="fixed top-[70%] right-[2%] bg-[red] z-[90] p-2 rounded-lg border-[1px] border-gray-600"
+    <button
+      class="group fixed top-[70%] right-[2%] z-[90] bg-red-600 rounded-full border border-gray-600 flex items-center overflow-hidden transition-all duration-300 w-[50px] hover:w-[160px]"
+      @click="hanldeOpenChatBot"
     >
-      <button class="text-[30px] text-white max-md:text-[20px]" @click="hanldeOpenChatBot">
+      <div
+        class="w-[50px] h-[50px] flex items-center justify-center text-white text-[28px] shrink-0"
+      >
+        🤖
+      </div>
+
+      <span
+        class="ml-2 whitespace-nowrap text-white text-[20px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      >
         ChatBot
-      </button>
-    </div>
+      </span>
+    </button>
+
     <div
-      class="fixed top-[85%] right-[2%] bg-[#2268DE] z-[90] p-2 rounded-lg border-[1px] border-gray-600"
+      class="fixed top-[85%] right-[2%] bg-[#2268DE] isolate z-[9999] p-2 rounded-lg border-[1px] border-gray-600"
     >
-      <button class="text-[30px] text-white max-md:text-[20px]" @click="hanldeHiddenHeader">
+      <button
+        class="text-[30px] text-white max-md:text-[20px]"
+        @click="hanldeHiddenHeader"
+      >
         {{ isHidden ? "Hiện header" : "Ẩn header" }}
       </button>
     </div>

@@ -85,6 +85,8 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { Modal } from "ant-design-vue";
 import axios from "axios";
+import { getDoctorsCached,
+  saveDoctorsCached } from "@/store/indexedDB";
 
 const doctors = ref([]);
 const specialties = ref([]);
@@ -96,6 +98,13 @@ const itemsPerRow = 4;
 const rowsToShow = 2;
 
 const fetchData = async () => {
+  const cachedDoctors = await getDoctorsCached();
+
+  if (cachedDoctors) {
+    doctors.value = cachedDoctors;
+    return;
+  }
+
   const modalWait = Modal.info({
     title: "Đang tải thông tin bác sĩ.",
     content: "Vui lòng chờ trong giây lát",
@@ -103,31 +112,17 @@ const fetchData = async () => {
   });
 
   try {
-    const [resDoctors, resSpecialties] = await Promise.all([
-      axios.get(
-        `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/getDataAllDoctor`
-      ),
-      axios.get(
-        `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/getDataAllSpecialties`
-      ),
-    ]);
+    const res = await axios.get(
+      `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/getDataAllDoctor`
+    );
 
-    if (resDoctors.data.status === 1) doctors.value = resDoctors.data.data;
-    else
-      Modal.error({
-        title: "Lỗi lấy bác sĩ",
-        content: resDoctors.data.message,
-      });
+    if (res.data.status === 1) {
+      doctors.value = res.data.data;
 
-    if (resSpecialties.data.status === 1)
-      specialties.value = resSpecialties.data.specialties;
-    else
-      Modal.error({
-        title: "Lỗi lấy chuyên khoa",
-        content: resSpecialties.data.message,
-      });
+      await saveDoctorsCached(res.data.data);
+    }
   } catch (e) {
-    Modal.error({ title: "Xảy ra lỗi", content: e.message });
+    Modal.error({ title: "Lỗi", content: e.message });
   } finally {
     modalWait.destroy();
   }

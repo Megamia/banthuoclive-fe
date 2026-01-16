@@ -6,7 +6,12 @@
     </div>
     <div class="flex flex-row gap-[30px]">
       <input type="file" @change="handleFileUpload" class="flex" />
-      <button @click="ClearAll">clear</button>
+      <button
+        @click="ClearAll"
+        class="bg-[red] px-2 text-white rounded hover:font-bold"
+      >
+        Xóa bỏ
+      </button>
     </div>
     <!-- <input
       type="text"
@@ -180,6 +185,8 @@ const getReliableConcepts = (concepts) => {
 };
 
 const analyzeImage = async () => {
+  if (isLoading.value) return; 
+
   if (!imageUrl.value) {
     error.value = "Vui lòng cung cấp ảnh!";
     return;
@@ -204,7 +211,6 @@ const analyzeImage = async () => {
     result.value = clarifaiResponse;
 
     const concepts = result.value.outputs[0].data.concepts;
-
     const reliableConcepts = getReliableConcepts(concepts);
 
     const normalizedConcepts = reliableConcepts.map((c) =>
@@ -217,10 +223,6 @@ const analyzeImage = async () => {
         categoryName.includes(concept)
       );
     });
-
-    if (productsFromDB.value.length === 0) {
-      console.log("Không tìm thấy sản phẩm trong kho.");
-    }
   } catch (err) {
     error.value = err.message;
   } finally {

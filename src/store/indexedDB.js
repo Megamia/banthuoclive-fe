@@ -11,7 +11,8 @@ const dbPromise = openDB("myDatabase", 3, {
       "ghn_provinces",
       "ghn_districts",
       "ghn_wards",
-      "orders"
+      "orders",
+      "doctors",
     ];
     stores.forEach((store) => {
       if (!db.objectStoreNames.contains(store)) {
@@ -215,4 +216,46 @@ export const saveOrderCached = async (orderCode, data) => {
     data,
     timestamp: Date.now(),
   });
+};
+
+export const getDoctorsCached = async () => {
+  try {
+    const db = await dbPromise;
+    const store = db.transaction("doctors").objectStore("doctors");
+    const data = await store.getAll();
+
+    if (!data.length) return null;
+
+    const timestamp = data[0]?.timestamp;
+    if (!timestamp || isExpired(timestamp)) {
+      return null;
+    }
+
+    return data;
+  } catch (e) {
+    console.error(" Lỗi lấy doctors cache:", e);
+    return null;
+  }
+};
+
+export const saveDoctorsCached = async (doctors) => {
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction("doctors", "readwrite");
+    const store = tx.objectStore("doctors");
+    const timestamp = Date.now();
+
+    await store.clear();
+
+    for (const doctor of doctors) {
+      store.put({
+        ...JSON.parse(JSON.stringify(doctor)),
+        timestamp,
+      });
+    }
+
+    await tx.done;
+  } catch (e) {
+    console.error(" Lỗi lưu doctors cache:", e);
+  }
 };
