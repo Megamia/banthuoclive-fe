@@ -670,15 +670,26 @@ const validatePhoneValue = (value) => {
 
 const validatePhone = (e) => validatePhoneValue(e.target.value);
 
-const toggleDetail = (index, code) => {
+const toggleDetail = async (index, code) => {
   if (selectedOrderIndex.value === index) {
     selectedOrderIndex.value = null;
-  } else {
-    selectedOrderIndex.value = index;
-    find(code);
-    isFind.value = false;
+    return;
   }
+
+  selectedOrderIndex.value = index;
+  isFind.value = false;
+
+  // 👇 check cache trước
+  const cachedOrder = await getOrderCached(code);
+  if (cachedOrder) {
+    dataInfor.value = cachedOrder;
+    return; // ❌ KHÔNG gọi GHN
+  }
+
+  // chỉ gọi GHN khi chưa có cache
+  await find(code);
 };
+
 const handleFindOrder = () => {
   if (!formState.GHN_Code.trim()) {
     Modal.error({
@@ -743,31 +754,30 @@ const find = async (code) => {
     content: "Vui lòng chờ trong giây lát",
     okButtonProps: { disabled: true },
   });
+
   try {
     const response = await axios.get(
-      `https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/detail?order_code=${code}`,
+      `https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/detail`,
       {
+        params: { order_code: code },
         headers: {
           Token: import.meta.env.VITE_GHN_API_KEY,
-          "Content-Type": "application/json",
         },
       }
     );
 
-    if (response.status === 200) {
-      dataGHN.value = response.data.data;
+    if (response.status !== 200) throw new Error("GHN error");
 
-      await getDataOrder(dataGHN.value.client_order_code);
-    } else {
-      Modal.error({
-        title: "Tìm kiếm thông tin đơn hàng thất bại",
-        content: `Không tìm thấy thông tin của đơn hàng của bạn với mã ${GHN_Code.value}`,
-      });
-      return;
-    }
+    dataGHN.value = response.data.data;
+
+    getDataOrder(dataGHN.value.client_order_code);
   } catch (e) {
-    console.error("Error:", e.response ? e.response.data : e.message);
+    Modal.error({
+      title: "Không tìm thấy đơn hàng",
+      content: `Mã ${code} không tồn tại`,
+    });
   } finally {
+    await sleep(1500);
     modalWait.destroy();
   }
 };
