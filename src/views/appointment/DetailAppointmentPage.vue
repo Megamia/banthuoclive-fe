@@ -320,7 +320,7 @@ const fetchDataDoctors = async () => {
     const cachedDoctor = cachedDoctors.find((d) => String(d.id) === String(id));
     if (cachedDoctor) {
       doctors.value = cachedDoctor;
-      await fetchDataSchedules(); 
+      await fetchDataSchedules();
       return;
     }
   }
