@@ -58,6 +58,19 @@
         >
           Đơn hàng của bạn
         </button>
+        <button
+        v-if="is_doctor"
+          href="#"
+          class="flex items-center px-3 py-2.5 hover:text-indigo-900 rounded-full"
+          @click="handleChangeActivePage(4)"
+          :class="
+            activePage == 4  
+              ? 'bg-slate-200 text-indigo-900 font-bold'
+              : 'bg-white font-semibold'
+          "
+        >
+          Lịch làm việc của bác sĩ
+        </button>
       </div>
     </aside>
     <main class="w-full min-h-screen py-1 md:w-2/3 lg:w-3/4">
@@ -519,7 +532,7 @@
                       handleReceived(
                         index,
                         dataOrderItem.order_code,
-                        dataOrderItem.id
+                        dataOrderItem.id,
                       )
                     "
                     :disabled="isReceived[index]"
@@ -584,6 +597,60 @@
             </a-flex>
           </a-flex>
         </div>
+
+        <div v-if="activePage == 4" class="w-full px-6 pb-8">
+          <a-flex vertical class="gap-6">
+            <h3 class="text-base font-semibold">Lịch làm việc của bạn</h3>
+
+            <div
+              :style="{
+                width: '300px',
+                border: '1px solid #d9d9d9',
+                borderRadius: '4px',
+              }"
+            >
+              <a-calendar
+                v-model:value="value1"
+                :fullscreen="false"
+                @change="handleChangeDay"
+              />
+            </div>
+
+            <!-- TIME SLOT -->
+            <div class="mt-4">
+              <label class="block text-sm text-gray-600 mb-2">
+                Lịch khám (30 phút)
+              </label>
+
+              <div class="grid grid-cols-4 gap-2">
+                <button
+                  v-for="s in availableSlots"
+                  :key="s.time"
+                  @click="handleClickSlot(s)"
+                  :class="[
+                    'p-2 rounded text-sm text-white transition',
+                    s.available
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-red-500 hover:bg-red-600',
+                  ]"
+                >
+                  {{ s.time }}
+                </button>
+              </div>
+
+              <p class="text-xs text-gray-500 mt-2">
+                🟢 Có lịch &nbsp; | &nbsp; 🔴 Chưa có / đã hủy
+              </p>
+              <div
+                class="bg-[#2268DE] text-white font-bold rounded hover:cursor-pointer mt-[20px] justify-center items-center flex-1 flex p-[20px]"
+              >
+                <button v-on:click="updateSchedules">
+                  Cập nhật lịch khám của bạn
+                </button>
+              </div>
+            </div>
+          </a-flex>
+        </div>
       </div>
     </main>
   </div>
@@ -598,6 +665,7 @@ import {
   resolveDirective,
   watch,
   watchEffect,
+  computed,
 } from "vue";
 import { useRouter } from "vue-router";
 import { CdEye, CdEyeClosed } from "@kalimahapps/vue-icons";
@@ -624,7 +692,7 @@ const districts = ref([]);
 const wards = ref([]);
 const activePage = ref(0);
 const editMode = ref(false);
-const GHN_Code = ref("");
+// const GHN_Code = ref("");
 const formState = reactive({
   GHN_Code: "",
 });
@@ -634,8 +702,8 @@ const dataOrder = ref([]);
 const isFind = ref(false);
 const isReceived = ref([]);
 const selectedOrderIndex = ref(null);
-let isUpdatingProvince = false;
-let isUpdatingDistrict = false;
+// let isUpdatingProvince = false;
+// let isUpdatingDistrict = false;
 
 const phoneError = ref("");
 
@@ -679,14 +747,12 @@ const toggleDetail = async (index, code) => {
   selectedOrderIndex.value = index;
   isFind.value = false;
 
-  // 👇 check cache trước
   const cachedOrder = await getOrderCached(code);
   if (cachedOrder) {
     dataInfor.value = cachedOrder;
-    return; // ❌ KHÔNG gọi GHN
+    return; 
   }
 
-  // chỉ gọi GHN khi chưa có cache
   await find(code);
 };
 
@@ -714,7 +780,7 @@ const handleReceived = async (index, order_code) => {
         const response = await axios.post(
           `${
             import.meta.env.VITE_APP_URL_API_ORDER
-          }/updateStatusOrder/${order_code}`
+          }/updateStatusOrder/${order_code}`,
         );
 
         if (response.data.status === 1) {
@@ -763,7 +829,7 @@ const find = async (code) => {
         headers: {
           Token: import.meta.env.VITE_GHN_API_KEY,
         },
-      }
+      },
     );
 
     if (response.status !== 200) throw new Error("GHN error");
@@ -825,7 +891,7 @@ const getDataOrder = async (order_code) => {
   }
 
   const res = await axios.get(
-    `${import.meta.env.VITE_APP_URL_API_ORDER}/getDataOrder/${order_code}`
+    `${import.meta.env.VITE_APP_URL_API_ORDER}/getDataOrder/${order_code}`,
   );
 
   if (res.data.status !== 1) return;
@@ -851,11 +917,11 @@ const getDataOrder = async (order_code) => {
   }
 
   const district = districts.find(
-    (d) => String(d.DistrictID) === String(data.district)
+    (d) => String(d.DistrictID) === String(data.district),
   );
 
   const ward = wards.find(
-    (w) => String(w.WardCode) === String(data.subdistrict)
+    (w) => String(w.WardCode) === String(data.subdistrict),
   );
 
   const finalData = {
@@ -880,7 +946,7 @@ const getAllDataOrder = async (id) => {
   });
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_ORDER}/getAllDataOrder/${id}`
+      `${import.meta.env.VITE_APP_URL_API_ORDER}/getAllDataOrder/${id}`,
     );
 
     modalWait.destroy();
@@ -896,20 +962,20 @@ const getAllDataOrder = async (id) => {
     async function loadNamesForOrders() {
       const promises = dataOrder.value.map(async (order) => {
         order.provinceName = await fetchProvinceNameById(
-          order.property.province
+          order.property.province,
         );
 
         const districtsData = await getDistrictsByProvinceId(
-          order.property.province
+          order.property.province,
         );
         const district = districtsData.find(
-          (d) => d.DistrictID == order.property.district
+          (d) => d.DistrictID == order.property.district,
         );
         order.districtName = district ? district.DistrictName : "";
 
         const wardsData = await getWardsByDistrictId(order.property.district);
         const ward = wardsData.find(
-          (w) => String(w.WardCode) === String(order.property.subdistrict)
+          (w) => String(w.WardCode) === String(order.property.subdistrict),
         );
         order.wardName = ward ? ward.WardName : "";
       });
@@ -943,7 +1009,7 @@ const fetchDistricts = async (provinceId) => {
   }
 
   const res = await axios.get(
-    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceId}`
+    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceId}`,
   );
 
   const data = res.data?.data || [];
@@ -965,7 +1031,7 @@ const fetchWards = async (districtId) => {
   }
 
   const res = await axios.get(
-    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtId}`
+    `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtId}`,
   );
 
   const data = res.data?.data || [];
@@ -979,7 +1045,7 @@ const getDistrictsByProvinceId = async (provinceId) => {
   if (!provinceId) return [];
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceId}`
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/districts/${provinceId}`,
     );
     return response.data.data || [];
   } catch (e) {
@@ -992,7 +1058,7 @@ const getWardsByDistrictId = async (districtId) => {
   if (!districtId) return [];
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtId}`
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/wards/${districtId}`,
     );
     return response.data.data || [];
   } catch (e) {
@@ -1053,7 +1119,7 @@ const handleChangeActivePage = async (value) => {
 const fetchProvinces = async () => {
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/provinces`
+      `${import.meta.env.VITE_APP_URL_API_GHN}/ghn/provinces`,
     );
     if (response.data.status === 1) {
       provinces.value = response.data.data || [];
@@ -1081,11 +1147,15 @@ const onDistrictChangeByUser = async (districtId) => {
   wards.value = await fetchWards(districtId);
 };
 
+const is_doctor = ref(false);
+
 const fetchProfile = async (storedUser) => {
   if (!storedUser) return;
 
   const user = JSON.parse(storedUser);
-
+  is_doctor.value = user.is_doctor;
+  console.log(is_doctor.value);
+  
   profile.value = {
     ...profile.value,
     first_name: user?.first_name || "",
@@ -1131,7 +1201,7 @@ const handleChangeInfo = async () => {
       payload,
       {
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
 
     modalWait.destroy();
@@ -1205,7 +1275,7 @@ const handleChangePassword = async () => {
         current_password: passwordForm.value.current_password,
         new_password: passwordForm.value.new_password,
       },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` } },
     );
     modalWait.destroy();
     if (response.data.status === 1 && response.data.code === 200) {
@@ -1230,11 +1300,326 @@ const handleChangePassword = async () => {
   }
 };
 
+// const test = async () => {
+//   try {
+//     const response = await axios.get(
+//       `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/doctors/${id}/schedules`,
+//     );
+//     console.log(response);
+//   } catch (e) {
+//     console.log("error: ", e);
+//   }
+// };
+
 onMounted(() => {
   const storedUser = localStorage.getItem("user");
-
+  // test(storedUser);
   fetchProvinces();
   fetchProfile(storedUser);
+});
+
+import dayjs from "dayjs";
+import "dayjs/locale/vi";
+
+dayjs.locale("vi");
+
+const prevSchedules = ref([]);
+
+/* =====================
+   USER / DOCTOR
+===================== */
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const doctorId = user.doctor_id;
+
+/* =====================
+   DATE
+===================== */
+const value1 = ref(dayjs());
+
+const selectedDate = ref({
+  raw: value1.value.toDate(),
+  date: value1.value.format("DD/MM/YYYY"),
+  weekday: value1.value.day() === 0 ? 7 : value1.value.day(),
+  weekdayLabel: value1.value.format("dddd"),
+});
+
+/* =====================
+   SCHEDULES
+===================== */
+const schedules = ref(user.schedules || []);
+
+/* =====================
+   TIME SLOT 30 PHÚT
+===================== */
+const generateTimeSlots = () => {
+  const base = dayjs().hour(9).minute(0).second(0);
+  const slots = [];
+
+  for (let i = 0; i < 16; i++) {
+    const time = base.add(i * 30, "minute").format("HH:mm");
+
+    slots.push({
+      time,
+      available: isAvailable(time),
+    });
+  }
+
+  return slots;
+};
+
+const availableSlots = computed(() => generateTimeSlots());
+/* =====================
+   CHECK SLOT AVAILABLE
+   (GIỐNG USER 100%)
+===================== */
+function isAvailable(timeStr) {
+  const [h, m] = timeStr.split(":").map(Number);
+  const slotMinutes = h * 60 + m;
+
+  return schedules.value.some((s) => {
+    if (Number(s.day_of_week) !== selectedDate.value.weekday) return false;
+
+    const [sh, sm] = s.start_time.split(":").map(Number);
+    const startMinutes = sh * 60 + sm;
+
+    const [eh, em] = s.end_time.split(":").map(Number);
+    const endMinutes = eh * 60 + em;
+
+    return slotMinutes >= startMinutes && slotMinutes < endMinutes;
+  });
+}
+
+/* =====================
+   ADD SCHEDULE
+===================== */
+const addSchedule = (time) => {
+  if (isAvailable(time)) return;
+
+  schedules.value.push({
+    doctor_id: doctorId,
+    day_of_week: selectedDate.value.weekday,
+    start_time: time + ":00",
+    end_time: dayjs(time, "HH:mm").add(30, "minute").format("HH:mm:ss"),
+  });
+};
+
+
+const removeSchedule = (time) => {
+  const slotStart = toMinutes(time);
+  const slotEnd = slotStart + 30;
+
+  const newSchedules = [];
+
+  schedules.value.forEach((s) => {
+    if (Number(s.day_of_week) !== selectedDate.value.weekday) {
+      newSchedules.push(s);
+      return;
+    }
+
+    const start = toMinutes(s.start_time.slice(0, 5));
+    const end = toMinutes(s.end_time.slice(0, 5));
+
+    if (slotEnd <= start || slotStart >= end) {
+      newSchedules.push(s);
+      return;
+    }
+
+    if (slotStart <= start && slotEnd >= end) {
+      return;
+    }
+
+    if (slotStart <= start && slotEnd < end) {
+      newSchedules.push({
+        ...s,
+        start_time: dayjs()
+          .hour(0)
+          .minute(0)
+          .add(slotEnd, "minute")
+          .format("HH:mm:ss"),
+      });
+      return;
+    }
+
+    if (slotStart > start && slotEnd >= end) {
+      newSchedules.push({
+        ...s,
+        end_time: dayjs()
+          .hour(0)
+          .minute(0)
+          .add(slotStart, "minute")
+          .format("HH:mm:ss"),
+      });
+      return;
+    }
+
+    newSchedules.push({
+      ...s,
+      end_time: dayjs()
+        .hour(0)
+        .minute(0)
+        .add(slotStart, "minute")
+        .format("HH:mm:ss"),
+    });
+
+    newSchedules.push({
+      ...s,
+      start_time: dayjs()
+        .hour(0)
+        .minute(0)
+        .add(slotEnd, "minute")
+        .format("HH:mm:ss"),
+    });
+  });
+
+  schedules.value = newSchedules;
+};
+
+const handleClickSlot = (slot) => {
+  if (slot.available) {
+    removeSchedule(slot.time);
+  } else {
+    addSchedule(slot.time);
+  }
+};
+
+const handleChangeDay = (value) => {
+  const date = value.$d;
+
+  selectedDate.value = {
+    raw: date,
+    date: dayjs(date).format("DD/MM/YYYY"),
+    weekday: dayjs(date).day() === 0 ? 7 : dayjs(date).day(),
+    weekdayLabel: dayjs(date).format("dddd"),
+  };
+};
+
+const toMinutes = (time) => {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
+
+const saveToLocal = () => {
+  user.schedules = schedules.value;
+  localStorage.setItem("user", JSON.stringify(user));
+};
+
+const updateSchedules = async () => {
+  console.log("====== CẬP NHẬT LỊCH KHÁM (FE) ======");
+
+  const oldSlots = explodeToSlots(prevSchedules.value);
+  const newSlots = explodeToSlots(schedules.value);
+
+  const added = newSlots.filter(
+    (n) =>
+      !oldSlots.some(
+        (o) => o.day_of_week === n.day_of_week && o.time === n.time,
+      ),
+  );
+
+  const removed = oldSlots.filter(
+    (o) =>
+      !newSlots.some(
+        (n) => n.day_of_week === o.day_of_week && n.time === o.time,
+      ),
+  );
+
+  if (!added.length && !removed.length) {
+    console.log("⚠️ Không có thay đổi lịch");
+    return;
+  }
+
+  added.forEach((s) =>
+    console.log("➕ Thêm slot:", `Thứ ${s.day_of_week} - ${s.time}`),
+  );
+
+  removed.forEach((s) =>
+    console.log("❌ Hủy slot:", `Thứ ${s.day_of_week} - ${s.time}`),
+  );
+
+  const mergedBlocks = mergeSlotsToBlocks(newSlots);
+
+  try {
+    const res = await axios.post(
+      `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/updateSchedulesByDoctor/${doctorId}`,
+      {
+        schedules: mergedBlocks,
+      },
+    );
+
+    prevSchedules.value = JSON.parse(JSON.stringify(schedules.value));
+
+    user.schedules = mergedBlocks;
+    localStorage.setItem("user", JSON.stringify(user));
+
+    console.log("✅ Đã cập nhật lịch thành công");
+  } catch (err) {
+    console.error("❌ Lỗi cập nhật lịch", err);
+  }
+};
+
+const mergeSlotsToBlocks = (slots) => {
+  const byDay = {};
+
+  slots.forEach((s) => {
+    if (!byDay[s.day_of_week]) byDay[s.day_of_week] = [];
+    byDay[s.day_of_week].push(toMinutes(s.time));
+  });
+
+  const blocks = [];
+
+  Object.keys(byDay).forEach((day) => {
+    const times = byDay[day].sort((a, b) => a - b);
+
+    let start = times[0];
+    let prev = times[0];
+
+    for (let i = 1; i <= times.length; i++) {
+      if (times[i] === prev + 30) {
+        prev = times[i];
+      } else {
+        blocks.push({
+          day_of_week: Number(day),
+          start_time: minutesToTime(start) + ":00",
+          end_time: minutesToTime(prev + 30) + ":00",
+        });
+
+        start = times[i];
+        prev = times[i];
+      }
+    }
+  });
+
+  return blocks;
+};
+
+const explodeToSlots = (list) => {
+  const slots = [];
+
+  list.forEach((s) => {
+    let start = toMinutes(s.start_time.slice(0, 5));
+    const end = toMinutes(s.end_time.slice(0, 5));
+
+    while (start < end) {
+      slots.push({
+        doctor_id: s.doctor_id,
+        day_of_week: s.day_of_week,
+        time: minutesToTime(start),
+      });
+      start += 30;
+    }
+  });
+
+  return slots;
+};
+
+const minutesToTime = (m) => {
+  const h = String(Math.floor(m / 60)).padStart(2, "0");
+  const min = String(m % 60).padStart(2, "0");
+  return `${h}:${min}`;
+};
+
+onMounted(() => {
+  prevSchedules.value = JSON.parse(JSON.stringify(schedules.value));
 });
 </script>
 

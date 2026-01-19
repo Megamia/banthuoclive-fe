@@ -98,12 +98,12 @@ const itemsPerRow = 4;
 const rowsToShow = 2;
 
 const fetchData = async () => {
-  const cachedDoctors = await getDoctorsCached();
+  // const cachedDoctors = await getDoctorsCached();
 
-  if (cachedDoctors) {
-    doctors.value = cachedDoctors;
-    return;
-  }
+  // if (cachedDoctors) {
+  //   doctors.value = cachedDoctors;
+  //   return;
+  // }
 
   const modalWait = Modal.info({
     title: "Đang tải thông tin bác sĩ.",

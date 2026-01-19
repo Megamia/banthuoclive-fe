@@ -150,7 +150,7 @@ import { Modal } from "ant-design-vue";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import "./DetailAppointmentPage.css";
-import { getDataFromIndexedDB } from "@/store/indexedDB";
+import { getDataFromIndexedDB, saveDataToIndexedDB } from "@/store/indexedDB";
 
 dayjs.locale("vi");
 
@@ -361,16 +361,16 @@ const fetchDataDoctors = async () => {
 };
 
 const fetchDataSchedules = async () => {
-  const cachedSchedules = await getDataFromIndexedDB("detailProduct");
+  // const cachedSchedules = await getDataFromIndexedDB("detailProduct");
 
-  if (cachedSchedules?.length) {
-    const cached = cachedSchedules.find((s) => String(s.id) === String(id));
+  // if (cachedSchedules?.length) {
+  //   const cached = cachedSchedules.find((s) => String(s.id) === String(id));
 
-    if (cached) {
-      schedules.value = cached.data;
-      return;
-    }
-  }
+  //   if (cached) {
+  //     schedules.value = cached.data;
+  //     return;
+  //   }
+  // }
 
   try {
     const response = await axios.get(
