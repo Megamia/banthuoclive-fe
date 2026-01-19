@@ -1154,7 +1154,6 @@ const fetchProfile = async (storedUser) => {
 
   const user = JSON.parse(storedUser);
   is_doctor.value = user.is_doctor;
-  console.log(is_doctor.value);
   
   profile.value = {
     ...profile.value,
@@ -1504,7 +1503,6 @@ const saveToLocal = () => {
 };
 
 const updateSchedules = async () => {
-  console.log("====== CẬP NHẬT LỊCH KHÁM (FE) ======");
 
   const oldSlots = explodeToSlots(prevSchedules.value);
   const newSlots = explodeToSlots(schedules.value);
@@ -1524,17 +1522,8 @@ const updateSchedules = async () => {
   );
 
   if (!added.length && !removed.length) {
-    console.log("⚠️ Không có thay đổi lịch");
     return;
   }
-
-  added.forEach((s) =>
-    console.log("➕ Thêm slot:", `Thứ ${s.day_of_week} - ${s.time}`),
-  );
-
-  removed.forEach((s) =>
-    console.log("❌ Hủy slot:", `Thứ ${s.day_of_week} - ${s.time}`),
-  );
 
   const mergedBlocks = mergeSlotsToBlocks(newSlots);
 
@@ -1551,7 +1540,10 @@ const updateSchedules = async () => {
     user.schedules = mergedBlocks;
     localStorage.setItem("user", JSON.stringify(user));
 
-    console.log("✅ Đã cập nhật lịch thành công");
+    Modal.success({
+      title: "Thành công",
+      content: "Đã cập nhật lịch thành công",
+    });
   } catch (err) {
     console.error("❌ Lỗi cập nhật lịch", err);
   }
