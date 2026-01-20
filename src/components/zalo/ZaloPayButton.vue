@@ -1,8 +1,8 @@
 <template>
   <button @click="payWithZalo" class="zalopay-btn flex justify-center items-center ">
     <img
-      src="https://upload.wikimedia.org/wikipedia/vi/7/77/ZaloPay_Logo.png"
-    class="w-[200px] h-[30px]"
+      src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-2s.png"
+    class="w-[130px] h-[30px]"
       />
   </button>
 </template>
