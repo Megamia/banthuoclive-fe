@@ -59,12 +59,12 @@
           Đơn hàng của bạn
         </button>
         <button
-        v-if="is_doctor"
+          v-if="is_doctor"
           href="#"
           class="flex items-center px-3 py-2.5 hover:text-indigo-900 rounded-full"
           @click="handleChangeActivePage(4)"
           :class="
-            activePage == 4  
+            activePage == 4
               ? 'bg-slate-200 text-indigo-900 font-bold'
               : 'bg-white font-semibold'
           "
@@ -750,7 +750,7 @@ const toggleDetail = async (index, code) => {
   const cachedOrder = await getOrderCached(code);
   if (cachedOrder) {
     dataInfor.value = cachedOrder;
-    return; 
+    return;
   }
 
   await find(code);
@@ -1154,7 +1154,7 @@ const fetchProfile = async (storedUser) => {
 
   const user = JSON.parse(storedUser);
   is_doctor.value = user.is_doctor;
-  
+
   profile.value = {
     ...profile.value,
     first_name: user?.first_name || "",
@@ -1402,7 +1402,6 @@ const addSchedule = (time) => {
   });
 };
 
-
 const removeSchedule = (time) => {
   const slotStart = toMinutes(time);
   const slotEnd = slotStart + 30;
@@ -1503,7 +1502,6 @@ const saveToLocal = () => {
 };
 
 const updateSchedules = async () => {
-
   const oldSlots = explodeToSlots(prevSchedules.value);
   const newSlots = explodeToSlots(schedules.value);
 
@@ -1527,6 +1525,11 @@ const updateSchedules = async () => {
 
   const mergedBlocks = mergeSlotsToBlocks(newSlots);
 
+  const modalWait = Modal.info({
+    title: "Đang xử lý yêu cầu của bạn...",
+    content: "Vui lòng chờ trong giây lát",
+    okButtonProps: { disabled: true },
+  });
   try {
     const res = await axios.post(
       `${import.meta.env.VITE_APP_URL_API_APPOINTMENT}/updateSchedulesByDoctor/${doctorId}`,
@@ -1534,18 +1537,25 @@ const updateSchedules = async () => {
         schedules: mergedBlocks,
       },
     );
+    modalWait.destroy();
+    if (res.data.status === 1) {
+      prevSchedules.value = JSON.parse(JSON.stringify(schedules.value));
 
-    prevSchedules.value = JSON.parse(JSON.stringify(schedules.value));
+      user.schedules = mergedBlocks;
+      localStorage.setItem("user", JSON.stringify(user));
 
-    user.schedules = mergedBlocks;
-    localStorage.setItem("user", JSON.stringify(user));
-
-    Modal.success({
-      title: "Thành công",
-      content: "Đã cập nhật lịch thành công",
-    });
+      Modal.success({
+        title: "Thành công",
+        content: "Đã cập nhật lịch thành công",
+      });
+    }else{
+      Modal.error({
+        title: "Thất bại",
+        content: "Đã xảy ra lỗi khi cập nhật lịch",
+      });
+    }
   } catch (err) {
-    console.error("❌ Lỗi cập nhật lịch", err);
+    console.error("Lỗi cập nhật lịch", err);
   }
 };
 

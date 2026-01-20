@@ -80,6 +80,13 @@ const columns = [
     sorter: (a, b) => new Date(a.meeting_time) - new Date(b.meeting_time),
     // width: "30%",
   },
+  {
+    title: "Trạng thái",
+    dataIndex: "status",
+    sorter: (a, b) => a.status.localeCompare(b.status),
+    // sorter: (a, b) => new Date(a.meeting_time) - new Date(b.meeting_time),
+    // width: "30%",
+  },
 ];
 
 const dataSource = ref([]);
